@@ -1,5 +1,5 @@
 (defun settablesize()
-  (print "Unesite velicinu table, broj mora biti veci od 8")
+  (print "Unesite velicinu table, broj mora biti veci od 8:")
   (let((size (read)))
   (cond((< size 9) (settablesize))
         (t(setq tablesize size)))))
@@ -15,7 +15,8 @@
        (t(cons(generateList tablesize '-) (generateTable (1- tsize))))))
 
 (defun setTable()
-               (setq table (generateTable tablesize)))
+  (setq table (generateTable tablesize))
+  (if (equal player 'k) (setq table (reverse table))))
 
 (defun printnumbers(tsize)
   (cond((zerop tsize) (format t " "))
@@ -23,7 +24,7 @@
 
 
 (defun printtable1(rowNum table)
-  (cond((null table) "Unesite sledeci potez")
+  (cond((null table) "Unesite sledeci potez:")
         (t (format t "~a~b ~c" rowNum (car table) #\linefeed) (printtable1 (1+ rowNum) (cdr table)))))
 
 
@@ -34,7 +35,7 @@
   (printtable1 1 table))
 
 (defun whoisplayingfirst()
-  (format t "~a ~a" "Unesite C ako zelite da prvi igra covek, ako zelite da prvo igra masina unesite K" #\linefeed)
+  (format t "~a ~a" "Unesite K ako zelite da prvi igra covek, ako zelite da prvo igra masina unesite C:" #\linefeed)
   (let((input (read)))
     (cond((equal input 'c)(setq player 'c))
           ((equal input 'k)(setq player 'k))
