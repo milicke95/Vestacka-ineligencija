@@ -4,9 +4,11 @@
   (cond((< size 9) (settablesize))
         (t(setq tablesize size)))))
 
+
 (defun generateList(tsize char)
   (cond((zerop tsize)'())
         (t(cons char (generateList (1- tsize) char)))))
+
 
 (defun generateTable(tsize)
  (cond((zerop tsize)'())
@@ -14,13 +16,16 @@
        ((< tsize 3) (cons (generateList tablesize 'o) (generateTable (1- tsize))))
        (t(cons(generateList tablesize '-) (generateTable (1- tsize))))))
 
+
 (defun setTable()
   (setq table (generateTable tablesize))
-  (if (equal player 'k) (setq table (reverse table))))
+  (if (equal player 'x) (setq table (reverse table))))
+
 
 (defun printnumbers(tsize)
   (cond((zerop tsize) (format t " "))
         (t(format t " ~d" tsize (printnumbers(- tsize 1))))))
+
 
 
 (defun printtable1(rowNum table)
@@ -29,20 +34,52 @@
 
 
 
+
 (defun printtable(table tablesize)
   (printnumbers tablesize)
   (format t "~c" #\linefeed)
   (printtable1 1 table))
 
+
 (defun whoisplayingfirst()
   (format t "~a ~a" "Unesite K ako zelite da prvi igra covek, ako zelite da prvo igra masina unesite C:" #\linefeed)
   (let((input (read)))
-    (cond((equal input 'c)(setq player 'c))
-          ((equal input 'k)(setq player 'k))
+    (cond((equal input 'c)(setq player 'o))
+          ((equal input 'k)(setq player 'x))
           (t(whoisplayingfirst)))))
+
 
  (defun main()
    (settablesize)
    (whoisplayingfirst)
    (settable)
    (printtable table tablesize))
+
+
+(defun getelement(dest)
+  (nth (- (cadr dest) 1) (nth (- (car dest) 1) table)))
+
+
+(defun setElementoflist(list ind val)
+  (cond((null list)'())
+        ((zerop ind) (cons val (setElementoflist (cdr list) (- ind 1) val)))
+        (t(cons (car list) (setElementoflist (cdr list) (- ind 1) val)))))
+
+
+(defun setElement1(table dest value)
+  (cond((null table) '())
+        ((zerop (- (car dest) 1)) (cons (setelementoflist (car table) (- (cadr dest) 1) value) (setelement1 (cdr table) (list (- (car dest) 1) (cadr dest)) value)))
+        (t(cons (car table) (setelement1 (cdr table) (list (- (car dest) 1) (cadr dest)) value)))))
+
+
+(defun setelement(dest value)
+  (setq table (setelement1 table dest value)))
+
+
+(defun playmove()
+  (let((source (read)))
+   (cond((atom source) (print "Potez morate uneti  kao listu npr (3 4)") (playmove))
+         ((or (< (cadr source) 1) (< (car source) 1) (>(cadr source) tablesize) (> (car source) tablesize)) (print "Nevalidan potez, izasli ste iz opsega") (playmove))
+         (t(let ((destination (read)))
+             (cond((atom destination) (print "Odrediste mora biti lista npr (3 4)") (playmove))
+                   ((or (< (cadr destination) 1) (< (car destination) 1) (> (cadr destination) tablesize) (> (car destination) tablesize)) (print "Nevalidan potez, izasli ste iz opsega") (playmove))))))))
