@@ -99,7 +99,7 @@
 
 (defun counto(tab)
   (cond ((null tab) 0)
-        (t (+ (countorow(car t)) (counto (cdr tab))))))
+        (t (+ (countorow(car tab)) (counto (cdr tab))))))
 
 (defun countorow(row)
   (cond ((null row) 0)
@@ -107,13 +107,13 @@
         (t (+ 0 (countorow (cdr row))))))
 
 (defun checkvertical(char)
-  (cond (> (- (+ (checkdown char played-move) (checkup char played-move)) 1) 4) t)
-        (t ('())))
+  (cond ((> (- (+ (checkdown char played-move) (checkup char played-move)) 1) 4) t)
+        (t ('()))))
 
 (defun checkup(c move)
-  (cond ((equal (car move) (- tablesize 2))) 0)
+  (cond ((equal (car move) (- tablesize 2)) 0)
         ((equal (getelement move) c) (1+ (checkup c (cons (1+ (car move)) (cdr move)))))
-        (t (0)))
+        (t (0))))
 
 (defun checkdown(c move)
   (cond ((equal (car move) 2) 0)
