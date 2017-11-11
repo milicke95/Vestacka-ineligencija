@@ -88,18 +88,18 @@
         ((checkdiagonal (getelement played-move)) t)
         (t ('()))))
 
-(defun countx(t)
-  (cond ((null t) 0)
-        (t (+ (countxrow(car t)) (countx (cdr t))))))
+(defun countx(tab)
+  (cond ((null tab) 0)
+        (t (+ (countxrow(car tab)) (countx (cdr tab))))))
 
 (defun countxrow(row)
   (cond ((null row) 0)
         ((equal (car row) 'x) (1+ (countxrow (cdr row))))
         (t (+ 0 (countxrow (cdr row))))))
 
-(defun counto(t)
-  (cond ((null t) 0)
-        (t (+ (countorow(car t)) (counto (cdr t))))))
+(defun counto(tab)
+  (cond ((null tab) 0)
+        (t (+ (countorow(car t)) (counto (cdr tab))))))
 
 (defun countorow(row)
   (cond ((null row) 0)
