@@ -16,31 +16,29 @@
        ((< tsize 3) (cons (generateList tablesize 'o) (generateTable (1- tsize))))
        (t(cons(generateList tablesize '-) (generateTable (1- tsize))))))
 
-
+;;
 (defun setTable()
   (setq table (generateTable tablesize))
   (if (equal player 'x) (setq table (reverse table))))
 
-
+;;ispisivanje brojeva vrsta i kolona
 (defun printnumbers(tsize)
   (cond((zerop tsize) (format t " "))
         (t(format t " ~d" tsize (printnumbers(- tsize 1))))))
 
-
-
+;;crtanje jedne vrste
 (defun printtable1(rowNum table)
   (cond((null table) "Unesite sledeci potez:")
         (t (format t "~a~b ~c" rowNum (car table) #\linefeed) (printtable1 (1+ rowNum) (cdr table)))))
 
 
-
-
+;;crtanje polja
 (defun printtable(table tablesize)
   (printnumbers tablesize)
   (format t "~c" #\linefeed)
   (printtable1 1 table))
 
-
+;;korisnik bira ko igra prvi
 (defun whoisplayingfirst()
   (format t "~a ~a" "Unesite K ako zelite da prvi igra covek, ako zelite da prvo igra masina unesite C:" #\linefeed)
   (let((input (read)))
@@ -48,8 +46,8 @@
           ((equal input 'k)(setq player 'x))
           (t(whoisplayingfirst)))))
 
-
- (defun main()
+;;pocetak igre
+(defun main()
    (settablesize)
    (whoisplayingfirst)
    (settable)
@@ -83,3 +81,41 @@
          (t(let ((destination (read)))
              (cond((atom destination) (print "Odrediste mora biti lista npr (3 4)") (playmove))
                    ((or (< (cadr destination) 1) (< (car destination) 1) (> (cadr destination) tablesize) (> (car destination) tablesize)) (print "Nevalidan potez, izasli ste iz opsega") (playmove))))))))
+
+(defun endofgame()
+  (cond ((or (< (countx table) 5) (< (counto table) 5)) t)
+        ((checkvertical (getelement played-move)) t)
+        ((checkdiagonal (getelement played-move)) t)
+        (t ('()))))
+
+(defun countx(t)
+  (cond ((null t) 0)
+        (t (+ (countxrow(car t)) (countx (cdr t))))))
+
+(defun countxrow(row)
+  (cond ((null row) 0)
+        ((equal (car row) 'x) (1+ (countxrow (cdr row))))
+        (t (+ 0 (countxrow (cdr row))))))
+
+(defun counto(t)
+  (cond ((null t) 0)
+        (t (+ (countorow(car t)) (counto (cdr t))))))
+
+(defun countorow(row)
+  (cond ((null row) 0)
+        ((equal (car row) 'x) (1+ (countorow (cdr row))))
+        (t (+ 0 (countorow (cdr row))))))
+
+(defun checkvertical(char)
+  (cond (> (- (+ (checkdown char played-move) (checkup char played-move)) 1) 4) t)
+        (t ('())))
+
+(defun checkup(c move)
+  (cond ((equal (car move) (- tablesize 2))) 0)
+        ((equal (getelement move) c) (1+ (checkup c (cons (1+ (car move)) (cdr move)))))
+        (t (0)))
+
+(defun checkdown(c move)
+  (cond ((equal (car move) 2) 0)
+        ((equal (getelement move) c) (1+ (checkdown c (cons (- (car move) 1) (cdr move)))))
+        (t (0))))
