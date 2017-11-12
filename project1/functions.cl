@@ -76,7 +76,7 @@
 
 (defun playmove()
   (let((source (read)))
-   (cond((atom source) (print "Potez morate uneti  kao listu npr (3 4)") (playmove))
+   (cond((atom source) (print "Potez morate uneti kao listu npr (3 4)") (playmove))
          ((or (< (cadr source) 1) (< (car source) 1) (>(cadr source) tablesize) (> (car source) tablesize)) (print "Nevalidan potez, izasli ste iz opsega") (playmove))
          (t(let ((destination (read)))
              (cond((atom destination) (print "Odrediste mora biti lista npr (3 4)") (playmove))
@@ -86,7 +86,7 @@
   (cond ((or (< (countx table) 5) (< (counto table) 5)) t)
         ((checkvertical (getelement played-move)) t)
         ((checkdiagonal (getelement played-move)) t)
-        (t ('()))))
+        (t '())))
 
 (defun countx(tab)
   (cond ((null tab) 0)
@@ -99,7 +99,7 @@
 
 (defun counto(tab)
   (cond ((null tab) 0)
-        (t (+ (countorow(car t)) (counto (cdr tab))))))
+        (t (+ (countorow(car tab)) (counto (cdr tab))))))
 
 (defun countorow(row)
   (cond ((null row) 0)
@@ -107,15 +107,29 @@
         (t (+ 0 (countorow (cdr row))))))
 
 (defun checkvertical(char)
-  (cond (> (- (+ (checkdown char played-move) (checkup char played-move)) 1) 4) t)
-        (t ('())))
+  (cond ((> (- (+ (checkvdown char played-move) (checkvup char played-move)) 1) 4) t)
+        (t '())))
 
-(defun checkup(c move)
-  (cond ((equal (car move) (- tablesize 2))) 0)
-        ((equal (getelement move) c) (1+ (checkup c (cons (1+ (car move)) (cdr move)))))
-        (t (0)))
+(defun checkvup(c move)
+  (cond ((equal (car move) 2 ) 0)
+        ((equal (getelement move) c) (+ 1 (checkvup c (cons (- (car move) 1) (cdr move)))))
+        (t 0)))
 
-(defun checkdown(c move)
-  (cond ((equal (car move) 2) 0)
-        ((equal (getelement move) c) (1+ (checkdown c (cons (- (car move) 1) (cdr move)))))
-        (t (0))))
+(defun checkvdown(c move)
+  (cond ((equal (car move) (- tablesize 1)) 0)
+        ((equal (getelement move) c) (+ 1 (checkvdown c (cons (+ 1 (car move)) (cdr move)))))
+        (t 0)))
+
+(defun checkdiagonal(char)
+  (cond ((> (- (+ (checkddown char played-move) (checkdup char played-move)) 1) 4) t)
+        (t '())))
+
+(defun checkdup(c move)
+  (cond ((or (> (cadr move) tablesize) (equal (car move) 2 )) 0)
+        ((equal (getelement move) c) (+ 1 (checkdup c (list (- (car move) 1) (+ 1 (cadr move))))))
+        (t 0)))
+
+(defun checkddown(c move)
+  (cond ((or (< (cadr move) 1) (equal (car move) (- tablesize 1))) 0)
+        ((equal (getelement move) c) (+ 1 (checkddown c (list (+ 1 (car move)) (- (cadr move) 1)))))
+        (t 0)))
