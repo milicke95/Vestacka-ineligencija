@@ -95,6 +95,12 @@
   (printtable table tablesize)
   (endofgame))
 
+(defun set-move(src dest)
+  (setq newtable table)
+  (set-element dest newtable))
+
+(defun set-element(dest ntable)
+  (setq newtable (setelement1 ntable dest player)) newtable)
 
 (defun isoutofbounds(pos)
   (cond((or (< (cadr pos) 1) (< (car pos) 1) (>(cadr pos) tablesize) (> (car pos) tablesize)) t)
@@ -202,3 +208,44 @@
   (cond ((or (< (cadr move) 1) (equal (car move) (- tablesize 1))) 0)
         ((equal (getelement move) c) (+ 1 (checkddown c (list (+ 1 (car move)) (- (cadr move) 1)))))
         (t 0)))
+
+(defun gen-all-possible-states(pla i j)
+  (cond ((equal i (1+ tablesize)) '())
+        ((equal j (1+ tablesize)) (gen-all-possible-states pla (1+ i) 1))
+        ((equal pla (getelement (list i j))) (cons (next-state pla (list i j)) (gen-all-possible-states pla i (1+ j))));; izmeni uslove f-je next-state da odgovaraju dole
+        (t (gen-all-possible-states pla i (1+ j)))))
+
+;(defun next-state(pl src tr tc)
+  ;(cond ((equal tr (1+ tablesize)) '())
+        ;((equal tc (1+ tablesize)) (next-state pl src (1+ tr) 1))
+        ;(t (cons (gen-new-state pl src tr tc) (next-state pl src tr (1+ tc))))))
+
+(defun next-state(pl src)
+  (list (gen-left pl src src) (gen-right pl src src) (gen-up pl src src) (gen-down pl src src)))
+
+(defun gen-left(pl src sour)
+  (cond ((equal (1- (cadr src)) 0) '())
+        ((has-barrier sour (list (car src) (1- (car src)))) (gen-left pl (list (car src) (1- (cadr src))) sour))
+        ((and (> (fieldsaway sour (list (car src) (1- (cadr src)))) 2) (has-barrier sour (list (car src) (1- (car src))))) '())
+        (t (cons (set-move sour (list (car src) (1- (cadr src)))) (gen-left pl (list (car src) (1- (cadr src))) sour)))))
+
+(defun gen-right(pl src sour)
+  (cond ((equal (1+ (cadr src)) 10) '())
+        ((has-barrier sour (list (car src) (1+ (cadr src)))) (gen-right pl (list (car src) (1+ (cadr src))) sour))
+        ((and (> (fieldsaway sour (list (car src) (1+ (cadr src)))) 2) (has-barrier sour (list (car src) (1+ (cadr src))))) '())
+        (t (cons (set-move sour (list (car src) (1+ (cadr src)))) (gen-right pl (list (car src) (1+ (cadr src))) sour)))))
+
+(defun gen-down(pl src sour)
+  (cond ((equal (1- (car src)) 0) '())
+        ((has-barrier sour (list (1- (car src)) (cadr src))) (gen-down pl (list (1- (car src)) (cadr src)) sour))
+        ((and (> (fieldsaway sour (list (1- (car src)) (cadr src))) 2) (has-barrier sour (list (1- (car src)) (cadr src)))) '())
+        (t (cons (set-move sour (list (1- (car src)) (cadr src))) (gen-down pl (list (1- (car src)) (cadr src)) sour)))))
+
+(defun gen-up(pl src sour)
+  (cond ((equal (1+ (car src)) 10) '())
+        ((has-barrier sour (list (1+ (car src)) (cadr src))) (gen-up pl (list (1+ (car src)) (cadr src)) sour))
+        ((and (> (fieldsaway sour (list (1+ (car src)) (cadr src))) 2) (has-barrier sour (list (1+ (car src)) (cadr src)))) '())
+        (t (cons (set-move sour (list (1+ (car src)) (cadr src))) (gen-up pl (list (1+ (car src)) (cadr src)) sour)))))
+
+;;(defun gen-new-state(pl src tr tc)
+  ;;(cond ((equal
