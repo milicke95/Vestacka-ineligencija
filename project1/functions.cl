@@ -221,15 +221,17 @@
 
 ;;generise sva stanja levo, desno, gore i dole u zavisnosti od zadate pozicije
 (defun next-state(pl src)
-  (list (gen-left pl src src) (gen-right pl src src) (gen-up pl src src) (gen-down pl src src)))
+  (let* ((all-moves (list (gen-left pl src src) (gen-right pl src src) (gen-up pl src src) (gen-down pl src src))))
+    (remove NIL all-moves)))
 
 ;;generise sva moguca stanja levo od zadatog polja
 (defun gen-left(pl src sour)
   (cond ((equal (1- (cadr src)) 0) '())
-        ((not (has-barrier sour (list (car src) (1- (car src))))) (cons (set-move sour (list (car src) (1- (cadr src)))) (gen-left pl (list (car src) (1- (cadr src))) sour)))
-        ((and (> (fieldsaway sour (list (car src) (1- (cadr src)))) 2) (has-barrier sour (list (car src) (1- (car src))))) (gen-left pl (list (car src) (1- (cadr src))) sour))
-        ((and (> (fieldsaway sour (list (car src) (1- (cadr src)))) 2) (has-barrier sour (list (car src) (1- (car src)))))
-         (cons (set-move sour (list (car src) (1- (cadr src)))) (gen-left pl (list (car src) (1- (cadr src))) sour)))
+        ((not (has-barrier sour (list (car src) (1- (cadr src))))) (cons (set-move sour (list (car src) (1- (cadr src)))) (gen-left pl (list (car src) (1- (cadr src))) sour)))
+        ((and (> (fieldsaway sour (list (car src) (1- (cadr src)))) 2) (has-barrier sour (list (car src) (1- (cadr src))))) (gen-left pl (list (car src) (1- (cadr src))) sour))
+        ((and (= (fieldsaway sour (list (car src) (1- (cadr src)))) 2) (has-barrier sour (list (car src) (1- (cadr src)))))
+         (if (not (equal '- (getelement src))) (gen-left pl (list (car src) (1- (cadr src))) sour)
+         (cons (set-move sour (list (car src) (1- (cadr src)))) (gen-left pl (list (car src) (1- (cadr src))) sour))))
         (t (gen-left pl (list (car src) (1- (cadr src))) sour))))
 
 ;;generise sva moguca stanja desno od zadatog polja
@@ -237,8 +239,9 @@
   (cond ((equal (1+ (cadr src)) 10) '())
         ((not (has-barrier sour (list (car src) (1+ (cadr src))))) (cons (set-move sour (list (car src) (1+ (cadr src)))) (gen-right pl (list (car src) (1+ (cadr src))) sour)))
         ((and (> (fieldsaway sour (list (car src) (1+ (cadr src)))) 2) (has-barrier sour (list (car src) (1+ (cadr src))))) (gen-right pl (list (car src) (1+ (cadr src))) sour))
-        ((and (= (fieldsaway sour (list (car src) (1+ (cadr src)))) 2) (has-barrier sour (list (car src) (1+ (cadr src)))))
-         (cons (set-move sour (list (car src) (1+ (cadr src)))) (gen-right pl (list (car src) (1+ (cadr src))) sour)))
+        ((and (= (fieldsaway sour (list (car src) (1+ (cadr src)))) 2) (has-barrier sour (list (car src) (1+ (cadr src))))) 
+         (if (not (equal '- (getelement src))) (gen-right pl (list (car src) (1+ (cadr src))) sour)
+         (cons (set-move sour (list (car src) (1+ (cadr src)))) (gen-right pl (list (car src) (1+ (cadr src))) sour))))
         (t (gen-right pl (list (car src) (1+ (cadr src))) sour))))
 
 ;;generise sva moguca stanja dole od zadatog polja
@@ -247,15 +250,83 @@
         ((not (has-barrier sour (list (1- (car src)) (cadr src)))) (cons (set-move sour (list (1- (car src)) (cadr src))) (gen-down pl (list (1- (car src)) (cadr src)) sour)))
         ((and (> (fieldsaway sour (list (1- (car src)) (cadr src))) 2) (has-barrier sour (list (1- (car src)) (cadr src)))) (gen-down pl (list (1- (car src)) (cadr src)) sour))
         ((and (= (fieldsaway sour (list (1- (car src)) (cadr src))) 2) (has-barrier sour (list (1- (car src)) (cadr src))))
-         (cons (set-move sour (list (1- (car src)) (cadr src))) (gen-down pl (list (1- (car src)) (cadr src)) sour)))
+         (if (not (equal '- (getelement src))) (gen-down pl (list (1- (car src)) (cadr src)) sour)
+         (cons (set-move sour (list (1- (car src)) (cadr src))) (gen-down pl (list (1- (car src)) (cadr src)) sour))))
         (t (gen-down pl (list (1- (car src)) (cadr src)) sour))))
 
 ;;generise sva moguca stanja gore od zadatog polja
 (defun gen-up(pl src sour)
   (cond ((equal (1+ (car src)) 10) '())
         ((not (has-barrier sour (list (1+ (car src)) (cadr src)))) (cons (set-move sour (list (1+ (car src)) (cadr src))) (gen-up pl (list (1+ (car src)) (cadr src)) sour)))
-        ((and (> (fieldsaway sour (list (1+ (car src)) (cadr src))) 2) (has-barrier sour (list (1+ (car src)) (cadr src)))) (gen-down pl (list (1- (car src)) (cadr src)) sour))
+        ((and (> (fieldsaway sour (list (1+ (car src)) (cadr src))) 2) (has-barrier sour (list (1+ (car src)) (cadr src)))) (gen-up pl (list (1+ (car src)) (cadr src)) sour))
         ((and (= (fieldsaway sour (list (1+ (car src)) (cadr src))) 2) (has-barrier sour (list (1+ (car src)) (cadr src))))
-         (cons (set-move sour (list (1+ (car src)) (cadr src))) (gen-up pl (list (1+ (car src)) (cadr src)) sour)))
+         (if (not (equal '- (getelement src))) (gen-down pl (list (1+ (car src)) (cadr src)) sour)
+         (cons (set-move sour (list (1+ (car src)) (cadr src))) (gen-up pl (list (1+ (car src)) (cadr src)) sour))))
         (t (gen-up pl (list (1+ (car src)) (cadr src)) sour))))
 
+
+
+
+(defun max-state (sv-list)
+  (format T "~A" sv-list)
+  (max-state-rec (cdr sv-list) (car sv-list)))
+
+(defun max-state-rec (sv-  list state-val)
+  (cond 
+   ((null sv-list) state-val)
+   ((> (cadar sv-list) (cadr state-val))
+    (max-state-rec (cdr sv-list) (car sv-list)))
+   (:else (max-state-rec (cdr sv-list) state-val))))
+
+(defun min-state (sv-list)
+  (min-state-rec (cdr sv-list) (car sv-list)))
+
+(defun min-state-rec (sv-list state-val)
+  (cond ((null sv-list) state-val)
+        ((< (cadar sv-list) (cadr state-val))
+         (min-state-rec (cdr sv-list) (car sv-list)))
+        (t (min-state-rec (cdr sv-list) state-val))))
+
+(defun minimax (current-state depth my-move start-state)
+  (let ((new-states (nova-stanja current-state)))
+    (cond 
+     ((or (zerop depth) (null new-states))
+      (list start-state (proceni-stanje current-state)))
+     ((equal my-move T)
+      (max-state (mapcar (lambda (x)
+                           (minimax x (1- depth)
+                                    (not my-move) start-state)) new-states)))
+     (:else 
+      (min-state (mapcar (lambda (x)
+                           (minimax x (1- depth)
+                                    (not my-move) start-state)) new-states))))))
+
+(defun alpha-beta (current-state depth max-depth my-move alpha beta)
+  (let ((new-states (nova-stanja current-state)))
+    (cond
+     ((or (null new-states) (>= depth max-depth))
+      (proceni-stanje current-state))
+     ((equal my-move T)
+      (dolist (new-state (nova-stanja current-state))
+        (setf  mm(alpha-beta new-state (1+ depth) max-depth (not my-move) alpha beta))
+        (setf alpha (max alpha mm))
+        ;(if (>= alpha beta) beta))
+        (if (>= alpha beta) (return beta)))
+      alpha)
+     (:else
+      (dolist (new-state (nova-stanja current-state))
+        (setf mm (alpha-beta new-state (1+ depth) max-depth (not my-move) alpha beta))
+        (setf beta (min beta mm))
+        ;(if (>= alpha beta) alpha))
+        (if (>= alpha beta) (return alpha)))
+      beta))))
+
+(defun my-minimax-alpha-beta (start-state max-depth my-move)
+  (let* ((new-states (nova-stanja start-state)))
+    (car (max-state
+          (mapcar (lambda (x) 
+                    (list x (alpha-beta x '0 max-depth (not my-move) +alpha+ +beta+)))
+            new-states)))))
+
+(defun minimax-alpha-beta (start-state max-depth my-move)
+  (list start-state (alpha-beta start-state '0 max-depth my-move +alpha+ +beta+)))
