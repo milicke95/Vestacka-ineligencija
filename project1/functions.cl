@@ -57,6 +57,8 @@
 (defun getelement(dest)
   (nth (- (cadr dest) 1) (nth (- (car dest) 1) table)))
 
+(defun get-element-of-table(dest tabl)
+  (nth (- (cadr dest) 1) (nth (- (car dest) 1) tabl)))
 
 (defun setElementoflist(list ind val)
   (cond((null list)'())
@@ -96,10 +98,10 @@
   (endofgame))
 
 ;;generise novu tablu za sledece stanje
-(defun set-move(src dest)
+(defun set-move(src dest tabela)
   (setq newtable table)
   (set-element src newtable '-)
-  (set-element dest newtable player))
+  (set-element dest newtable (get-element-of-table src tabela)))
 
 ;;postavlja figuru na odredjeno polje
 (defun set-element(dest ntable pl)
@@ -213,56 +215,72 @@
         (t 0)))
 
 ;;"pla" je igrac za koga se generise a "i" i "j" su iteratori
-(defun gen-all-possible-states(pla i j)
+(defun gen-all-possible-states(pla i j tabela)
   (cond ((equal i (1+ tablesize)) '())
-        ((equal j (1+ tablesize)) (gen-all-possible-states pla (1+ i) 1))
-        ((equal pla (getelement (list i j))) (cons (next-state pla (list i j)) (gen-all-possible-states pla i (1+ j))));; izmeni uslove f-je next-state da odgovaraju dole
-        (t (gen-all-possible-states pla i (1+ j)))))
+        ((equal j (1+ tablesize)) (gen-all-possible-states pla (1+ i) 1 tabela))
+        ((equal pla (get-element-of-table (list i j) tabela)) (cons (next-state pla (list i j) tabela) (gen-all-possible-states pla i (1+ j) tabela)));; izmeni uslove f-je next-state da odgovaraju dole
+        (t (gen-all-possible-states pla i (1+ j) tabela))))
 
 ;;generise sva stanja levo, desno, gore i dole u zavisnosti od zadate pozicije
-(defun next-state(pl src)
-  (let* ((all-moves (list (gen-left pl src src) (gen-right pl src src) (gen-up pl src src) (gen-down pl src src))))
+(defun next-state(pl src tabela)
+  (let* ((all-moves (cons (gen-left pl src src tabela) (cons (gen-right pl src src tabela) (cons (gen-up pl src src tabela) (gen-down pl src src tabela))))))
     (remove NIL all-moves)))
 
 ;;generise sva moguca stanja levo od zadatog polja
-(defun gen-left(pl src sour)
+(defun gen-left(pl src sour tabela)
   (cond ((equal (1- (cadr src)) 0) '())
-        ((not (has-barrier sour (list (car src) (1- (cadr src))))) (cons (set-move sour (list (car src) (1- (cadr src)))) (gen-left pl (list (car src) (1- (cadr src))) sour)))
-        ((and (> (fieldsaway sour (list (car src) (1- (cadr src)))) 2) (has-barrier sour (list (car src) (1- (cadr src))))) (gen-left pl (list (car src) (1- (cadr src))) sour))
-        ((and (= (fieldsaway sour (list (car src) (1- (cadr src)))) 2) (has-barrier sour (list (car src) (1- (cadr src)))))
-         (if (not (equal '- (getelement src))) (gen-left pl (list (car src) (1- (cadr src))) sour)
-         (cons (set-move sour (list (car src) (1- (cadr src)))) (gen-left pl (list (car src) (1- (cadr src))) sour))))
-        (t (gen-left pl (list (car src) (1- (cadr src))) sour))))
+        ((not (has-barrier sour (list (car src) (1- (cadr src))))) (cons (set-move sour (list (car src) (1- (cadr src)) tabela)) (gen-left pl (list (car src) (1- (cadr src))) sour tabela)))
+        ((= (fieldsaway sour (list (car src) (1- (cadr src)))) 1) ( cond((equal (- (cadr src) 2) 0) '()) 
+                                                                        ((equal (get-element-of-table (list (car src) (- (cadr src) 2)) tabela) '-) (set-move sour (list (car src) (- (cadr src) 2)) tabela))
+                                                                        (t '())))
+        (t '())))
+        ;((and (> (fieldsaway sour (list (car src) (1- (cadr src)))) 2) (has-barrier sour (list (car src) (1- (cadr src))))) (gen-left pl (list (car src) (1- (cadr src))) sour))
+        ;((and (= (fieldsaway sour (list (car src) (1- (cadr src)))) 2) (has-barrier sour (list (car src) (1- (cadr src)))))
+         ;(if (not (equal '- (getelement src))) (gen-left pl (list (car src) (1- (cadr src))) sour)
+         ;(cons (set-move sour (list (car src) (1- (cadr src)))) (gen-left pl (list (car src) (1- (cadr src))) sour))))
+        ;(t (gen-left pl (list (car src) (1- (cadr src))) sour))))
 
 ;;generise sva moguca stanja desno od zadatog polja
-(defun gen-right(pl src sour)
+(defun gen-right(pl src sour tabela)
   (cond ((equal (1+ (cadr src)) 10) '())
-        ((not (has-barrier sour (list (car src) (1+ (cadr src))))) (cons (set-move sour (list (car src) (1+ (cadr src)))) (gen-right pl (list (car src) (1+ (cadr src))) sour)))
-        ((and (> (fieldsaway sour (list (car src) (1+ (cadr src)))) 2) (has-barrier sour (list (car src) (1+ (cadr src))))) (gen-right pl (list (car src) (1+ (cadr src))) sour))
-        ((and (= (fieldsaway sour (list (car src) (1+ (cadr src)))) 2) (has-barrier sour (list (car src) (1+ (cadr src))))) 
-         (if (not (equal '- (getelement src))) (gen-right pl (list (car src) (1+ (cadr src))) sour)
-         (cons (set-move sour (list (car src) (1+ (cadr src)))) (gen-right pl (list (car src) (1+ (cadr src))) sour))))
-        (t (gen-right pl (list (car src) (1+ (cadr src))) sour))))
+        ((not (has-barrier sour (list (car src) (1+ (cadr src))))) (cons (set-move sour (list (car src) (1+ (cadr src))) tabela) (gen-right pl (list (car src) (1+ (cadr src))) sour tabela)))
+        ((= (fieldsaway sour (list (car src) (1- (cadr src)))) 1) ( cond((equal (+ (cadr src) 2) 10) '()) 
+                                                                        ((equal (get-element-of-table (list (car src) (+ (cadr src) 2)) tabela) '-) (set-move sour (list (car src) (+ (cadr src) 2)) tabela))
+                                                                        (t '())))
+        (t '())))
+        ;((and (> (fieldsaway sour (list (car src) (1+ (cadr src)))) 2) (has-barrier sour (list (car src) (1+ (cadr src))))) (gen-right pl (list (car src) (1+ (cadr src))) sour))
+        ;((and (= (fieldsaway sour (list (car src) (1+ (cadr src)))) 2) (has-barrier sour (list (car src) (1+ (cadr src))))) 
+         ;(if (not (equal '- (getelement src))) (gen-right pl (list (car src) (1+ (cadr src))) sour)
+         ;(cons (set-move sour (list (car src) (1+ (cadr src)))) (gen-right pl (list (car src) (1+ (cadr src))) sour))))
+        ;(t (gen-right pl (list (car src) (1+ (cadr src))) sour))))
 
 ;;generise sva moguca stanja dole od zadatog polja
-(defun gen-down(pl src sour)
+(defun gen-down(pl src sour tabela)
   (cond ((equal (1- (car src)) 0) '())
-        ((not (has-barrier sour (list (1- (car src)) (cadr src)))) (cons (set-move sour (list (1- (car src)) (cadr src))) (gen-down pl (list (1- (car src)) (cadr src)) sour)))
-        ((and (> (fieldsaway sour (list (1- (car src)) (cadr src))) 2) (has-barrier sour (list (1- (car src)) (cadr src)))) (gen-down pl (list (1- (car src)) (cadr src)) sour))
-        ((and (= (fieldsaway sour (list (1- (car src)) (cadr src))) 2) (has-barrier sour (list (1- (car src)) (cadr src))))
-         (if (not (equal '- (getelement src))) (gen-down pl (list (1- (car src)) (cadr src)) sour)
-         (cons (set-move sour (list (1- (car src)) (cadr src))) (gen-down pl (list (1- (car src)) (cadr src)) sour))))
-        (t (gen-down pl (list (1- (car src)) (cadr src)) sour))))
+        ((not (has-barrier sour (list (1- (car src)) (cadr src)))) (cons (set-move sour (list (1- (car src)) (cadr src)) tabela) (gen-down pl (list (1- (car src)) (cadr src)) sour tabela)))
+        ((= (fieldsaway sour (list (car src) (1- (cadr src)))) 1) ( cond((equal (- (car src) 2) 0) '()) 
+                                                                        ((equal (get-element-of-table (list (- (car src) 2) (cadr src)) tabela) '-) (set-move sour (list (- (car src) 2) (cadr src)) tabela))
+                                                                        (t '())))
+        (t '())))
+        ;((and (> (fieldsaway sour (list (1- (car src)) (cadr src))) 2) (has-barrier sour (list (1- (car src)) (cadr src)))) (gen-down pl (list (1- (car src)) (cadr src)) sour))
+        ;((and (= (fieldsaway sour (list (1- (car src)) (cadr src))) 2) (has-barrier sour (list (1- (car src)) (cadr src))))
+         ;(if (not (equal '- (getelement src))) (gen-down pl (list (1- (car src)) (cadr src)) sour)
+         ;(cons (set-move sour (list (1- (car src)) (cadr src))) (gen-down pl (list (1- (car src)) (cadr src)) sour))))
+        ;(t (gen-down pl (list (1- (car src)) (cadr src)) sour))))
 
 ;;generise sva moguca stanja gore od zadatog polja
-(defun gen-up(pl src sour)
+(defun gen-up(pl src sour tabela)
   (cond ((equal (1+ (car src)) 10) '())
-        ((not (has-barrier sour (list (1+ (car src)) (cadr src)))) (cons (set-move sour (list (1+ (car src)) (cadr src))) (gen-up pl (list (1+ (car src)) (cadr src)) sour)))
-        ((and (> (fieldsaway sour (list (1+ (car src)) (cadr src))) 2) (has-barrier sour (list (1+ (car src)) (cadr src)))) (gen-up pl (list (1+ (car src)) (cadr src)) sour))
-        ((and (= (fieldsaway sour (list (1+ (car src)) (cadr src))) 2) (has-barrier sour (list (1+ (car src)) (cadr src))))
-         (if (not (equal '- (getelement src))) (gen-down pl (list (1+ (car src)) (cadr src)) sour)
-         (cons (set-move sour (list (1+ (car src)) (cadr src))) (gen-up pl (list (1+ (car src)) (cadr src)) sour))))
-        (t (gen-up pl (list (1+ (car src)) (cadr src)) sour))))
+        ((not (has-barrier sour (list (1+ (car src)) (cadr src)))) (cons (set-move sour (list (1+ (car src)) (cadr src)) tabela) (gen-up pl (list (1+ (car src)) (cadr src)) sour tabela)))
+        ((= (fieldsaway sour (list (car src) (1- (cadr src)))) 1) ( cond((equal (+ (car src) 2) 10) '()) 
+                                                                        ((equal (get-element-of-table (list (+ (car src) 2) (cadr src)) tabela) '-) (set-move sour (list (+ (car src) 2) (cadr src)) tabela))
+                                                                        (t '())))
+        (t '())))
+        ;((and (> (fieldsaway sour (list (1+ (car src)) (cadr src))) 2) (has-barrier sour (list (1+ (car src)) (cadr src)))) (gen-up pl (list (1+ (car src)) (cadr src)) sour))
+        ;((and (= (fieldsaway sour (list (1+ (car src)) (cadr src))) 2) (has-barrier sour (list (1+ (car src)) (cadr src))))
+         ;(if (not (equal '- (getelement src))) (gen-down pl (list (1+ (car src)) (cadr src)) sour)
+         ;(cons (set-move sour (list (1+ (car src)) (cadr src))) (gen-up pl (list (1+ (car src)) (cadr src)) sour))))
+        ;(t (gen-up pl (list (1+ (car src)) (cadr src)) sour))))
 
 
 
@@ -330,3 +348,8 @@
 
 (defun minimax-alpha-beta (start-state max-depth my-move)
   (list start-state (alpha-beta start-state '0 max-depth my-move +alpha+ +beta+)))
+
+
+(defun add-to-graph(graph node successors)
+               (cond((null graph) (list(list node successors)))
+                     (t(list(car graph) (add-to-graph (cdr graph) node successors)))))
