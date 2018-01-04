@@ -42,8 +42,8 @@
 (defun whoisplayingfirst()
   (format t "~a ~a" "Unesite K ako zelite da prvi igra covek, ako zelite da prvo igra masina unesite C:" #\linefeed)
   (let((input (read)))
-    (cond((equal input 'c)(setq player 'o))
-          ((equal input 'k)(setq player 'x))
+    (cond((equal input 'c)(setq player 'o)(update-player-mm))
+          ((equal input 'k)(setq player 'x)(update-player-mm))
           (t(whoisplayingfirst)))))
 
 ;;pocetak igre
@@ -94,8 +94,14 @@
   (setelement dest player)
   (setelement src '-)
   (setq played-move dest)
+  (if (equal player 'o) (setq player 'x) (setq player 'o))
+  (update-player-mm)
   (printtable table tablesize)
   (endofgame))
+
+(defun update-player-mm()
+    (cond ((equal player 'x) (setq player1 'o))
+          (t (setq player1 'x))))
 
 ;;generise novu tablu za sledece stanje
 (defun set-move(src dest tabela)
@@ -145,21 +151,45 @@
         ((dest-right src dest) (- (cadr dest) (cadr src)))
         (t (print "Nevalidan potez") '0)))
 
+(defun fieldsaway1(src dest)
+  (cond((dest-up src dest) (- (car src) (car dest)))
+        ((dest-bellow src dest) (- (car dest) (car src)))
+        ((dest-left src dest) (- (cadr src) (cadr dest)))
+        ((dest-right src dest) (- (cadr dest) (cadr src)))
+        (t '0)))
+
 (defun has-barrier(src dest)
- (has-barrier1 src dest '1))
+  (has-barrier1 src dest '1))
 
 
 (defun has-barrier1(src dest it)
   (cond((not (equal (getelement dest) '-)) t)
-                     ((equal src dest) '())
-                     ((and (equal player 'x) (equal (getelement src) 'o) ) t)
-                     ((and (equal player 'x) (> it 1) (equal (getelement src) 'x)) t)
-                     ((and (equal player 'o) (equal (getelement src) 'x) ) t)
-                     ((and (equal player 'o) (> it 1) (equal (getelement src) 'o)) t) 
-                     ((dest-up src dest) (has-barrier1 (list (- (car src) 1) (cadr src)) dest (+ it 1)))
-                     ((dest-bellow src dest) (has-barrier1 (list (+ (car src) 1) (cadr src)) dest (+ it 1)))
-                     ((dest-left src dest) (has-barrier1 (list (car src) (- (cadr src) 1)) dest (+ it 1)))
-                     ((dest-right src dest) (has-barrier1 (list (car src) (+ (cadr src) 1)) dest (+ it 1)))))
+        ((equal src dest) '())
+        ((and (equal player 'x) (equal (getelement src) 'o) ) t)
+        ((and (equal player 'x) (> it 1) (equal (getelement src) 'x)) t)
+        ((and (equal player 'o) (equal (getelement src) 'x) ) t)
+        ((and (equal player 'o) (> it 1) (equal (getelement src) 'o)) t) 
+        ((dest-up src dest) (has-barrier1 (list (- (car src) 1) (cadr src)) dest (+ it 1)))
+        ((dest-bellow src dest) (has-barrier1 (list (+ (car src) 1) (cadr src)) dest (+ it 1)))
+        ((dest-left src dest) (has-barrier1 (list (car src) (- (cadr src) 1)) dest (+ it 1)))
+        ((dest-right src dest) (has-barrier1 (list (car src) (+ (cadr src) 1)) dest (+ it 1)))))
+
+(defun has-barrier2(src dest)
+  (has-barrier3 src (getelement src) dest '1))
+
+
+(defun has-barrier3(src sour dest it)
+  (cond((not (equal (getelement dest) '-)) t)
+        ((equal src dest) '())
+        ((and (equal sour 'x) (equal (getelement src) 'o) ) t)
+        ((and (equal sour 'x) (> it 1) (equal (getelement src) 'x)) t)
+        ((and (equal sour 'o) (equal (getelement src) 'x) ) t)
+        ((and (equal sour 'o) (> it 1) (equal (getelement src) 'o)) t) 
+        ((dest-up src dest) (has-barrier3 (list (- (car src) 1) (cadr src)) sour dest (+ it 1)))
+        ((dest-bellow src dest) (has-barrier3 (list (+ (car src) 1) (cadr src)) sour dest (+ it 1)))
+        ((dest-left src dest) (has-barrier3 (list (car src) (- (cadr src) 1)) sour dest (+ it 1)))
+        ((dest-right src dest) (has-barrier3 (list (car src) (+ (cadr src) 1)) sour dest (+ it 1)))))
+
 
 
 (defun endofgame()
@@ -229,51 +259,63 @@
 ;;generise sva moguca stanja levo od zadatog polja
 (defun gen-left(pl src sour tabela)
   (cond ((equal (1- (cadr src)) 0) '())
-        ((not (has-barrier sour (list (car src) (1- (cadr src))))) (cons (set-move sour (list (car src) (1- (cadr src)) tabela)) (gen-left pl (list (car src) (1- (cadr src))) sour tabela)))
-        ((= (fieldsaway sour (list (car src) (1- (cadr src)))) 1) 
+        ((not (has-barrier2 sour (list (car src) (1- (cadr src))))) (cons (set-move sour (list (car src) (1- (cadr src))) tabela) (gen-left pl (list (car src) (1- (cadr src))) sour tabela)))
+        ((= (fieldsaway1 sour (list (car src) (1- (cadr src)))) 1) 
          ( cond((equal (- (cadr src) 2) 0) '()) 
-               ((equal (get-element-of-table (list (car src) (- (cadr src) 2)) tabela) '-) (set-move sour (list (car src) (- (cadr src) 2)) tabela))
+               ((equal (get-element-of-table (list (car src) (- (cadr src) 2)) tabela) '-) (cons (set-move sour (list (car src) (- (cadr src) 2)) tabela) '()))
                (t '())))
         (t '())))
 
 ;;generise sva moguca stanja desno od zadatog polja
 (defun gen-right(pl src sour tabela)
   (cond ((equal (1+ (cadr src)) 10) '())
-        ((not (has-barrier sour (list (car src) (1+ (cadr src))))) (cons (set-move sour (list (car src) (1+ (cadr src))) tabela) (gen-right pl (list (car src) (1+ (cadr src))) sour tabela)))
-        ((= (fieldsaway sour (list (car src) (1- (cadr src)))) 1) 
+        ((not (has-barrier2 sour (list (car src) (1+ (cadr src))))) (cons (set-move sour (list (car src) (1+ (cadr src))) tabela) (gen-right pl (list (car src) (1+ (cadr src))) sour tabela)))
+        ((= (fieldsaway1 sour (list (car src) (1- (cadr src)))) 1) 
          (cond((equal (+ (cadr src) 2) 10) '()) 
-               ((equal (get-element-of-table (list (car src) (+ (cadr src) 2)) tabela) '-) (set-move sour (list (car src) (+ (cadr src) 2)) tabela))
+               ((equal (get-element-of-table (list (car src) (+ (cadr src) 2)) tabela) '-) (cons (set-move sour (list (car src) (+ (cadr src) 2)) tabela) '()))
                (t '())))
         (t '())))
 
 ;;generise sva moguca stanja dole od zadatog polja
 (defun gen-down(pl src sour tabela)
   (cond ((equal (1- (car src)) 0) '())
-        ((not (has-barrier sour (list (1- (car src)) (cadr src)))) (cons (set-move sour (list (1- (car src)) (cadr src)) tabela) (gen-down pl (list (1- (car src)) (cadr src)) sour tabela)))
-        ((= (fieldsaway sour (list (car src) (1- (cadr src)))) 1) 
+        ((not (has-barrier2 sour (list (1- (car src)) (cadr src)))) (cons (set-move sour (list (1- (car src)) (cadr src)) tabela) (gen-down pl (list (1- (car src)) (cadr src)) sour tabela)))
+        ((= (fieldsaway1 sour (list (car src) (1- (cadr src)))) 1) 
          (cond((equal (- (car src) 2) 0) '()) 
-               ((equal (get-element-of-table (list (- (car src) 2) (cadr src)) tabela) '-) (set-move sour (list (- (car src) 2) (cadr src)) tabela))
+               ((equal (get-element-of-table (list (- (car src) 2) (cadr src)) tabela) '-) (cons (set-move sour (list (- (car src) 2) (cadr src)) tabela) '()))
                (t '())))
         (t '())))
 
 ;;generise sva moguca stanja gore od zadatog polja
 (defun gen-up(pl src sour tabela)
   (cond ((equal (1+ (car src)) 10) '())
-        ((not (has-barrier sour (list (1+ (car src)) (cadr src)))) (cons (set-move sour (list (1+ (car src)) (cadr src)) tabela) (gen-up pl (list (1+ (car src)) (cadr src)) sour tabela)))
-        ((= (fieldsaway sour (list (car src) (1- (cadr src)))) 1) 
+        ((not (has-barrier2 sour (list (1+ (car src)) (cadr src)))) (cons (set-move sour (list (1+ (car src)) (cadr src)) tabela) (gen-up pl (list (1+ (car src)) (cadr src)) sour tabela)))
+        ((= (fieldsaway1 sour (list (car src) (1- (cadr src)))) 1) 
          (cond((equal (+ (car src) 2) 10) '()) 
-               ((equal (get-element-of-table (list (+ (car src) 2) (cadr src)) tabela) '-) (set-move sour (list (+ (car src) 2) (cadr src)) tabela))
+               ((equal (get-element-of-table (list (+ (car src) 2) (cadr src)) tabela) '-) (cons (set-move sour (list (+ (car src) 2) (cadr src)) tabela) '()))
                (t '())))
         (t '())))
 
+(defun add-to-graph(graph node successors)
+               (cond((null graph) (list(list node successors)))
+                     (t(list(car graph) (add-to-graph (cdr graph) node successors)))))
 
+(defun naslednici(state move)
+  (gen-all-possible-states move '1 '1 state))
 
+(defun new-move-mm()
+    (cond ((equal player1 'x) (setq player1 'o) player1)
+          (t (setq player1 'x) player1)))
+
+(defun proceni-stanje(state pla)
+  (cond ((equal pla 'x) (random 10))
+        (t (- (random 10) 10))))
 
 (defun max-state (sv-list)
-  (format T "~A" sv-list)
+  ;;(format T "~A" sv-list)
   (max-state-rec (cdr sv-list) (car sv-list)))
 
-(defun max-state-rec (sv-  list state-val)
+(defun max-state-rec (sv-list state-val)
   (cond 
    ((null sv-list) state-val)
    ((> (cadar sv-list) (cadr state-val))
@@ -289,51 +331,52 @@
          (min-state-rec (cdr sv-list) (car sv-list)))
         (t (min-state-rec (cdr sv-list) state-val))))
 
-(defun minimax (current-state depth my-move start-state)
-  (let ((new-states (nova-stanja current-state)))
+(defun switchplay(playe)
+  (cond ((equal playe 'x) 'o)
+        (t 'x)))
+
+(defun minimax (current-state depth my-move whoplay)
+  (let ((new-states (naslednici current-state whoplay)));;(new-move-mm)
     (cond 
      ((or (zerop depth) (null new-states))
-      (list start-state (proceni-stanje current-state)))
+      (list current-state (proceni-stanje current-state)))
      ((equal my-move T)
       (max-state (mapcar (lambda (x)
                            (minimax x (1- depth)
-                                    (not my-move) start-state)) new-states)))
+                                    (not my-move) whoplay)) new-states)))
      (:else 
       (min-state (mapcar (lambda (x)
                            (minimax x (1- depth)
-                                    (not my-move) start-state)) new-states))))))
+                                    (not my-move) (switchplay whoplay))) new-states))))))
 
-(defun alpha-beta (current-state depth max-depth my-move alpha beta)
-  (let ((new-states (nova-stanja current-state)))
+(defun alpha-beta (current-state depth max-depth my-move alpha beta whoplay)
+  (let ((new-states (naslednici current-state whoplay)))
     (cond
      ((or (null new-states) (>= depth max-depth))
-      (proceni-stanje current-state))
+      (proceni-stanje current-state whoplay))
      ((equal my-move T)
-      (dolist (new-state (nova-stanja current-state))
-        (setf  mm(alpha-beta new-state (1+ depth) max-depth (not my-move) alpha beta))
+      (dolist (new-state (naslednici current-state whoplay))
+        (setf  mm(alpha-beta new-state (1+ depth) max-depth (not my-move) alpha beta whoplay))
         (setf alpha (max alpha mm))
         ;(if (>= alpha beta) beta))
         (if (>= alpha beta) (return beta)))
       alpha)
      (:else
-      (dolist (new-state (nova-stanja current-state))
-        (setf mm (alpha-beta new-state (1+ depth) max-depth (not my-move) alpha beta))
+      (dolist (new-state (naslednici current-state (switchplay whoplay)))
+        (setf mm (alpha-beta new-state (1+ depth) max-depth (not my-move) alpha beta (switchplay whoplay)))
         (setf beta (min beta mm))
         ;(if (>= alpha beta) alpha))
         (if (>= alpha beta) (return alpha)))
       beta))))
 
-(defun my-minimax-alpha-beta (start-state max-depth my-move)
-  (let* ((new-states (nova-stanja start-state)))
+(defun my-minimax-alpha-beta (start-state max-depth my-move whoplay)
+  (let* ((new-states (naslednici start-state whoplay)))
     (car (max-state
           (mapcar (lambda (x) 
-                    (list x (alpha-beta x '0 max-depth (not my-move) +alpha+ +beta+)))
+                    (list x (alpha-beta x '0 max-depth (not my-move) -99999 99999 whoplay)))
             new-states)))))
 
-(defun minimax-alpha-beta (start-state max-depth my-move)
-  (list start-state (alpha-beta start-state '0 max-depth my-move +alpha+ +beta+)))
+(defun minimax-alpha-beta (start-state max-depth my-move whoplay)
+  (list start-state (alpha-beta start-state '0 max-depth my-move -99999 99999 whoplay)))
 
 
-(defun add-to-graph(graph node successors)
-               (cond((null graph) (list(list node successors)))
-                     (t(list(car graph) (add-to-graph (cdr graph) node successors)))))
