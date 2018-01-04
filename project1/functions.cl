@@ -549,4 +549,6 @@
     (if (> (cadr p) (cadr d)) p d))
    
 (defun min2 (p d)
-    (if (< (cadr p) (cadr d)) p d))
+  (if (< (cadr p) (cadr d)) p d))
+
+;;cao stefi
