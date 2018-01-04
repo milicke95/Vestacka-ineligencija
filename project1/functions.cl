@@ -107,8 +107,79 @@
 (defun set-move(src dest tabela)
   (setq newtable table)
   (set-element src newtable '-)
-  (set-element dest newtable (get-element-of-table src tabela)))
+  (set-element dest newtable (get-element-of-table src tabela))
+  (sandwich newtable dest (get-element-of-table src tabela)))
 
+;;ukljanja sve figure koje su u sandwich-u
+(defun sandwich(ta m p)
+  (sand-up (sand-down (sand-right (sand-left ta m p) m p) m p) m p))
+
+(defun remove-sandwich-u(tabl move dest)
+  (cond ((equal move dest) tabl)
+        (t (remove-sandwich-u (set-element move tabl '-) (list (1+ (car move)) (cadr move)) dest))))
+
+(defun remove-sandwich-d(tabl move dest)
+  (cond ((equal move dest) tabl)
+        (t (remove-sandwich-d (set-element move tabl '-) (list (- (car move) 1) (cadr move)) dest))))
+
+(defun remove-sandwich-r(tabl move dest)
+  (cond ((equal move dest) tabl)
+        (t (remove-sandwich-r (set-element move tabl '-) (list (car move) (1+ (cadr move))) dest))))
+
+(defun remove-sandwich-l(tabl move dest)
+  (cond ((equal move dest) tabl)
+        (t (remove-sandwich-l (set-element move tabl '-) (list (car move) (- (cadr move) 1)) dest))))
+
+(defun sand-up(ta m p)
+  (let ((i (car m)) (j (cadr m)))
+    (cond ((equal (1+ i) (1+ tablesize)) ta)
+          ((or (equal p (get-element-of-table (list (1+ i) j) ta)) (equal '- (get-element-of-table (list (1+ i) j) ta))) ta)
+          (t (san-up ta m p (+ i 2) j)))))
+
+(defun san-up(ta m p i j)
+  (cond ((equal i (1+ tablesize)) ta)
+        ((equal '- (get-element-of-table (list i j) ta)) ta)
+        ((equal p (get-element-of-table (list i j) ta)) (remove-sandwich-u ta (list (1+ (car m)) (cadr m)) (list i j)))
+        (t (san-up ta m p (1+ i) j))))
+
+(defun sand-down(ta m p)
+  (let ((i (car m)) (j (cadr m)))
+    (cond ((equal (- i 1) 0) ta)
+          ((or (equal p (get-element-of-table (list (- i 1) j) ta)) (equal '- (get-element-of-table (list (- i 1) j) ta))) ta)
+          (t (san-down ta m p (- i 2) j)))))
+
+(defun san-down(ta m p i j)
+  (cond ((equal i 0) ta)
+        ((equal '- (get-element-of-table (list i j) ta)) ta)
+        ((equal p (get-element-of-table (list i j) ta)) (remove-sandwich-d ta (list (- (car m) 1) (cadr m)) (list i j)))
+        (t (san-down ta m p (- i 1) j))))
+
+(defun sand-right(ta m p)
+  (let ((i (car m)) (j (cadr m)))
+    (cond ((equal (1+ j) (1+ tablesize)) ta)
+          ((or (equal p (get-element-of-table (list i (1+ j)) ta)) (equal '- (get-element-of-table (list i (1+ j)) ta))) ta)
+          (t (san-right ta m p i (+ j 2))))))
+
+(defun san-right(ta m p i j)
+  (cond ((equal j (1+ tablesize)) ta)
+        ((equal '- (get-element-of-table (list i j) ta)) ta)
+        ((equal p (get-element-of-table (list i j) ta)) (remove-sandwich-r ta (list (car m) (1+ (cadr m))) (list i j)))
+        (t (san-right ta m p i (1+ j)))))
+
+(defun sand-left(ta m p)
+  (let ((i (car m)) (j (cadr m)))
+    (cond ((equal (- j 1) 0) ta)
+          ((or (equal p (get-element-of-table (list i (- j 1)) ta)) (equal '- (get-element-of-table (list i (- j 1)) ta))) ta)
+          (t (san-left ta m p i (- j 2))))))
+
+(defun san-left(ta m p i j)
+  (cond ((equal j 0) ta)
+        ((equal '- (get-element-of-table (list i j) ta)) ta)
+        ((equal p (get-element-of-table (list i j) ta)) (remove-sandwich-l ta (list (car m) (- (cadr m) 1)) (list i j)))
+        (t (san-left ta m p i (- j 1)))))
+
+
+               
 ;;postavlja figuru na odredjeno polje
 (defun set-element(dest ntable pl)
   (setq newtable (setelement1 ntable dest pl)) newtable)
@@ -190,6 +261,62 @@
         ((dest-left src dest) (has-barrier3 (list (car src) (- (cadr src) 1)) sour dest (+ it 1)))
         ((dest-right src dest) (has-barrier3 (list (car src) (+ (cadr src) 1)) sour dest (+ it 1)))))
 
+
+(defun endofgame1(tabl pla)
+  (cond ((or (< (countx tabl) 5) (< (counto tabl) 5)) t)
+        (
+         (t (checkend tabl pla 1 1)))))
+  
+(defun kraj-igre(tabl pla)
+  (if (or (win-vertical tabl pla '1) (win-diagonal-down tabl pla '1) (win-diagonal-up tabl pla '1)) t '()))
+
+(defun win-vertical(tabl pla i)
+  (cond ((equal i (1+ tablesize)) '())
+        ((check-end-v tabl pla i) t)        
+        (t (win-vertical tabl pla (+ 1 i)))))
+
+(defun win-diagonal-down(tabl pla i)
+  (cond ((equal i 6) '())
+        ((check-end-dd tabl pla i) t)        
+        (t (win-diagonal-down tabl pla (+ 1 i)))))
+
+(defun win-diagonal-up(tabl pla i)
+  (cond ((equal i 6) '())
+        ((check-end-du tabl pla i) t)        
+        (t (win-diagonal-up tabl pla (+ 1 i)))))
+
+(defun check-end-v(tabl pla i)
+  (if (and (equal pla (get-element-of-table (list '3 i) tabl))
+           (equal pla (get-element-of-table (list '4 i) tabl))
+           (equal pla (get-element-of-table (list '5 i) tabl))
+           (equal pla (get-element-of-table (list '6 i) tabl))
+           (equal pla (get-element-of-table (list '7 i) tabl)))
+      t '()))
+
+(defun check-end-dd(tabl pla i)
+  (if (and (equal pla (get-element-of-table (list '3 (+ i 1)) tabl))
+           (equal pla (get-element-of-table (list '4 (+ i 2)) tabl))
+           (equal pla (get-element-of-table (list '5 (+ i 3)) tabl))
+           (equal pla (get-element-of-table (list '6 (+ i 4)) tabl))
+           (equal pla (get-element-of-table (list '7 (+ i 5)) tabl)))
+      t '()))
+
+(defun check-end-du(tabl pla i)
+  (if (and (equal pla (get-element-of-table (list '7 (+ i 1)) tabl))
+           (equal pla (get-element-of-table (list '6 (+ i 2)) tabl))
+           (equal pla (get-element-of-table (list '5 (+ i 3)) tabl))
+           (equal pla (get-element-of-table (list '4 (+ i 4)) tabl))
+           (equal pla (get-element-of-table (list '3 (+ i 5)) tabl)))
+      t '()))
+
+    
+        
+(defun checkend(tabl pla i j)
+  (cond ((equal i (1+ tablesize)) '())
+        ((equal j (1+ tablesize)) (checkend tabl pla (1+ i) 1))
+        ((equal (getelement (list i j)) pla)
+         (if (or (checkvertical (getelement (list i j))) (checkdiagonal (getelement (list i j)))) t '()))
+        (t (checkend tabl pla i (+1 j)))))
 
 
 (defun endofgame()
@@ -308,8 +435,7 @@
           (t (setq player1 'x) player1)))
 
 (defun proceni-stanje(state pla)
-  (cond ((equal pla 'x) (random 10))
-        (t (- (random 10) 10))))
+  (random 10))
 
 (defun max-state (sv-list)
   ;;(format T "~A" sv-list)
@@ -379,4 +505,48 @@
 (defun minimax-alpha-beta (start-state max-depth my-move whoplay)
   (list start-state (alpha-beta start-state '0 max-depth my-move -99999 99999 whoplay)))
 
-
+(defun alphabeta (state depth alpha beta moj-potez roditelj whoplay)
+    (if (or (zerop depth) (endofgame1 state whoplay))
+        (proceni-stanje state whoplay)
+        (if (null moj-potez)
+            (min-stanje state depth alpha beta moj-potez roditelj (sledbenici state (figura_comp moj-potez)) (list '() '100) (switchplay whoplay))
+            (max-stanje state depth alpha beta moj-potez roditelj (sledbenici state (figura_comp moj-potez)) (list '() '-100) whoplay)
+        )
+    )
+)
+ 
+(defun max-stanje (state depth alpha beta moj-potez roditelj lp v whoplay)
+    (if (null lp) v
+    (let* ((v1 (max2 (alphabeta (car lp) (1- depth) alpha beta (not moj-potez) (if (null roditelj) (car lp) roditelj) whoplay) v))
+        (a (maxi v1 alpha))
+        )
+        (if (<= beta a) v1
+            (max-stanje state depth a beta moj-potez roditelj (cdr lp) v1)
+        )
+    )
+    )
+)
+ 
+(defun min-stanje (state depth alpha beta moj-potez roditelj lp v whoplay)
+    (if (null lp) v
+    (let* ((v1 (min2 (alphabeta (car lp) (1- depth) alpha beta (not moj-potez) (if (null roditelj) (car lp) roditelj) whoplay) v))
+        (b (mini v1 beta))
+        )
+        (if (<= b alpha) v1
+            (min-stanje state depth alpha b moj-potez roditelj (cdr lp) v1)
+        )
+    )
+    )
+)
+ 
+(defun maxi (p d)
+    (if (> (cadr p) d) (cadr p) d))
+   
+(defun mini (p d)
+    (if (< (cadr p) d) (cadr p) d))
+ 
+(defun max2 (p d)
+    (if (> (cadr p) (cadr d)) p d))
+   
+(defun min2 (p d)
+    (if (< (cadr p) (cadr d)) p d))

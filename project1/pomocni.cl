@@ -88,3 +88,50 @@
 (defun proc (tabla)
   (proceni_triv tabla 2 0)
   )
+
+
+(defun alphabeta (state depth alpha beta moj-potez roditelj)
+    (if (or (zerop depth) (pobeda state (figura_comp moj-potez)))
+        (list state (proc state) roditelj alpha beta)
+        (if (null moj-potez)
+            (min-stanje state depth alpha beta moj-potez roditelj (sledbenici state (figura_comp moj-potez)) (list '() '100))
+            (max-stanje state depth alpha beta moj-potez roditelj (sledbenici state (figura_comp moj-potez)) (list '() '-100))
+        )
+    )
+)
+ 
+(defun max-stanje (state depth alpha beta moj-potez roditelj lp v)
+    (if (null lp) v
+    (let* ((v1 (max2 (alphabeta (car lp) (1- depth) alpha beta (not moj-potez) (if (null roditelj) (car lp) roditelj)) v))
+        (a (maxi v1 alpha))
+        )
+        (if (<= beta a) v1
+            (max-stanje state depth a beta moj-potez roditelj (cdr lp) v1)
+        )
+    )
+    )
+)
+ 
+(defun min-stanje (state depth alpha beta moj-potez roditelj lp v)
+    (if (null lp) v
+    (let* ((v1 (min2 (alphabeta (car lp) (1- depth) alpha beta (not moj-potez) (if (null roditelj) (car lp) roditelj)) v))
+        (b (mini v1 beta))
+        )
+        (if (<= b alpha) v1
+            (min-stanje state depth alpha b moj-potez roditelj (cdr lp) v1)
+        )
+    )
+    )
+)
+ 
+(defun maxi (p d)
+    (if (> (cadr p) d) (cadr p) d))
+   
+(defun mini (p d)
+    (if (< (cadr p) d) (cadr p) d))
+ 
+(defun max2 (p d)
+    (if (> (cadr p) (cadr d)) p d))
+   
+(defun min2 (p d)
+    (if (< (cadr p) (cadr d)) p d))
