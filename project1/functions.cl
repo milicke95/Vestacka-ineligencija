@@ -754,23 +754,23 @@
                            ((and (>= bottom-left top) (>= bottom-left bottom) (>= bottom-left top-right) (>= bottom-left top-left) (>= bottom-left bottom-right)) bottom-left))))
 
 
-(defun get-number-of-elements-for-sandwich1(state number i j)
-                (cond((and (equal i tablesize) (equal j (+ tablesize 1))) number)
-                      ((> j tablesize) (get-number-of-elements-for-sandwich1 state number (+ i 1) '1))
-                      ((and (< number (get-number-of-elements (list i j) state)) (equal (get-element-of-table (list i j) state) 'o)) (get-number-of-elements-for-sandwich1 state (get-number-of-elements (list i j) state) i (+ j 1)))
-                      (t(get-number-of-elements-for-sandwich1 state number i (+ j 1)))))
+(defun get-number-of-elements-for-sandwich1(state number overlap i j)
+                (cond((and (equal i tablesize) (equal j (+ tablesize 1))) (list number overlap))
+                      ((> j tablesize) (get-number-of-elements-for-sandwich1 state number overlap (+ i 1) '1))
+                      ((and (< number (get-number-of-elements (list i j) state)) (equal (get-element-of-table (list i j) state) 'o)) (get-number-of-elements-for-sandwich1 state (get-number-of-elements (list i j) state) '0 i (+ j 1)))
+                      ((and (= number (get-number-of-elements (list i j) state)) (equal (get-element-of-table (list i j) state) 'o)) (get-number-of-elements-for-sandwich1 state number (+ 1 overlap) i (+ j 1)))
+                      (t(get-number-of-elements-for-sandwich1 state number overlap i (+ j 1)))))
 
 ;;za dato stanje racuna maksimalni broj elemenata za moguci sendvic
 (defun get-number-of-elements-for-sandwich(state)
-  (get-number-of-elements-for-sandwich1 state '0 '1 '1))
+  (get-number-of-elements-for-sandwich1 state '0 '0 '1 '1))
 
 ;;racuna score prema razlici oksa i xsa
 (defun score(tabela)
   (- (counto tabela) (countx tabela)))
 
-;;heuristika
-(defun evaluate(state)
+;;heuristika dodati random 
+(defun heuristic(state)
                 (cond((kraj-igre state 'o) '100)
-                      ((> (get-number-of-elements-for-sandwich state) 3) '98)
-                      ((= (get-number-of-elements-for-sandwich state) 3) '95)
-                      (t(* (score state) (/ 100 (* tablesize 2))))))
+                      ((> (car (get-number-of-elements-for-sandwich state)) 1) (+ (score state) (+ (car (get-number-of-elements-for-sandwich state)) (cadr(get-number-of-elements-for-sandwich state)))))
+                      (t(score state))))
