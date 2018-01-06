@@ -1,5 +1,0 @@
-(THIRD 3)
-(FIRST 1)
-(SECOND 2)
-(FOURTH 4)
-(FIFTH 5)
