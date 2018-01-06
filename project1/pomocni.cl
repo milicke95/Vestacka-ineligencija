@@ -55,83 +55,103 @@
                            (minimax x (1- depth)
                                     (not my-move) start-state)) new-states))))))
 
-(defun proceni_triv (tabla red kol)
+
+
+(defconstant +very-low-number+ -999999
+  "Large negative number (absolute value should be larger than any score
+  returned by a heuristic.")
+
+(defconstant +very-high-number+ 999999
+  "Large number (value should be larger than any score returned by a
+  heuristic.")
+
+(defun alpha-beta (state heuristic children max-depth whoplay other)
+  (let* ((player whoplay)
+         (enemy other))
+    (labels ((maximize (states alpha beta depth)
+               (if (null states)
+                   alpha
+                   (let* ((state (car states))
+                          (alpha (max alpha (iter state (+ depth 1) alpha beta))))
+                     (if (<= beta alpha)
+                         alpha
+                         (maximize (cdr states) alpha beta depth)))))
+             (minimize (states alpha beta depth)
+               (if (null states)
+                   beta
+                   (let* ((state (car states))
+                          (beta (min alpha (iter state (+ depth 1) alpha beta))))
+                     (if (<= beta alpha)
+                         beta
+                         (minimize (cdr states) alpha beta depth)))))
+             (iter (state depth
+                          &optional (alpha +very-low-number+) (beta +very-high-number+))
+               (let ((next-states (funcall children state (whosemove))))
+                 (cond ((null next-states) 0)
+                       ((kraj-igre state player) 10)
+                       ((kraj-igre state enemy) (- 10))
+                       ((= depth max-depth) (funcall heuristic state player))
+                       ((eq (switchplay whoplay) enemy)
+                        (maximize next-states alpha beta depth))
+                       (t (minimize next-states alpha beta depth))))))
+      (iter state 0))))
+
+(defun whosemove()
+  (cond ((equal player 'x) (setq player 'o) 'x) 
+        (t (setq player 'x) 'o)))
+
+(defun napravi-hash()
+  (defparameter *hash-table* (make-hash-table))
+  (setf (gethash 'first *hash-table*) 1)
+  (setf (gethash 'second *hash-table*) 2)
+  (setf (gethash 'third *hash-table*) 3)
+  (setf (gethash 'fourth *hash-table*) 4))
+
+(defun sacuvaj-hash()
+  (with-open-file (str "D:\\Faks\\VII semestar\\Vestacka inteligencija\\Vestacka-ineligencija\\project1\\filename.txt"
+                     :direction :output
+                     :if-exists :append
+                     :if-does-not-exist :create)
+    (maphash (lambda (key value)(format str "~a~b" (list key value) #\newline)) *hash-table*)))
+
+(defun dodaj-u-fajl(key value)
+  (with-open-file (str "D:\\Faks\\VII semestar\\Vestacka inteligencija\\Vestacka-ineligencija\\project1\\hash.txt"
+                     :direction :output
+                     :if-exists :append
+                     :if-does-not-exist :create)
+    (format str "~a~b" (list key value) #\newline)))
+
+(maphash (lambda (key value)(write (list key value))) *hash-table*)
+(maphash (lambda (key value)(format str "~a~b" (list key value) #\newline)) *hash-table*)
   
-  
-  (let ((xvr (1+ red)) (yvr (- realn red)))
-  (cond
-  ((equalp red 7) 0)
 
-  ((equal (nth kol (nth red tabla)) 'x) 
-    (if (equal (1+ kol) realN)
-        (+ (proceni_triv tabla (1+ red) 0) xvr)
-        (+ (proceni_triv tabla red (1+ kol)) xvr) )
-   )
- 
-  ((equal (nth kol (nth red tabla)) 'o)
-    (if (equal (1+ kol) realN)
-        (- (proceni_triv tabla (1+ red) 0) yvr)
-        (- (proceni_triv tabla red (1+ kol)) yvr) )
-   )
+(defun alpha-beta (current-state depth max-depth my-move alpha beta whoplay)
+  (let ((new-states (naslednici current-state whoplay)))
+    (cond
+     ((or (null new-states) (>= depth max-depth))
+      (proceni-stanje current-state whoplay))
+     ((equal my-move T)
+      (dolist (new-state (naslednici current-state whoplay))
+        (setf  mm(alpha-beta new-state (1+ depth) max-depth (not my-move) alpha beta whoplay))
+        (setf alpha (max alpha mm))
+        ;(if (>= alpha beta) beta))
+        (if (>= alpha beta) (return beta)))
+      alpha)
+     (:else
+      (dolist (new-state (naslednici current-state (switchplay whoplay)))
+        (setf mm (alpha-beta new-state (1+ depth) max-depth (not my-move) alpha beta (switchplay whoplay)))
+        (setf beta (min beta mm))
+        ;(if (>= alpha beta) alpha))
+        (if (>= alpha beta) (return alpha)))
+      beta))))
 
-  ((equal (nth kol (nth red tabla)) '-)    
-    (if (equal (1+ kol) realN)
-        (+ 0 (proceni_triv tabla (1+ red) 0))
-        (+ 0 (proceni_triv tabla red (1+ kol))) )
-   )
-   
-   )
-    )
-  
-  )
+(defun my-minimax-alpha-beta (start-state max-depth my-move whoplay)
+  (let* ((new-states (naslednici start-state whoplay)))
+    (car (max-state
+          (mapcar (lambda (x) 
+                    (list x (alpha-beta x '0 max-depth (not my-move) -99999 99999 whoplay)))
+            new-states)))))
 
-(defun proc (tabla)
-  (proceni_triv tabla 2 0)
-  )
+(defun minimax-alpha-beta (start-state max-depth my-move whoplay)
+  (list start-state (alpha-beta start-state '0 max-depth my-move -99999 99999 whoplay)))
 
-
-(defun alphabeta (state depth alpha beta moj-potez roditelj)
-    (if (or (zerop depth) (pobeda state (figura_comp moj-potez)))
-        (list state (proc state) roditelj alpha beta)
-        (if (null moj-potez)
-            (min-stanje state depth alpha beta moj-potez roditelj (sledbenici state (figura_comp moj-potez)) (list '() '100))
-            (max-stanje state depth alpha beta moj-potez roditelj (sledbenici state (figura_comp moj-potez)) (list '() '-100))
-        )
-    )
-)
- 
-(defun max-stanje (state depth alpha beta moj-potez roditelj lp v)
-    (if (null lp) v
-    (let* ((v1 (max2 (alphabeta (car lp) (1- depth) alpha beta (not moj-potez) (if (null roditelj) (car lp) roditelj)) v))
-        (a (maxi v1 alpha))
-        )
-        (if (<= beta a) v1
-            (max-stanje state depth a beta moj-potez roditelj (cdr lp) v1)
-        )
-    )
-    )
-)
- 
-(defun min-stanje (state depth alpha beta moj-potez roditelj lp v)
-    (if (null lp) v
-    (let* ((v1 (min2 (alphabeta (car lp) (1- depth) alpha beta (not moj-potez) (if (null roditelj) (car lp) roditelj)) v))
-        (b (mini v1 beta))
-        )
-        (if (<= b alpha) v1
-            (min-stanje state depth alpha b moj-potez roditelj (cdr lp) v1)
-        )
-    )
-    )
-)
- 
-(defun maxi (p d)
-    (if (> (cadr p) d) (cadr p) d))
-   
-(defun mini (p d)
-    (if (< (cadr p) d) (cadr p) d))
- 
-(defun max2 (p d)
-    (if (> (cadr p) (cadr d)) p d))
-   
-(defun min2 (p d)
-    (if (< (cadr p) (cadr d)) p d))
