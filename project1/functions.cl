@@ -555,7 +555,7 @@
   (let ((new-states (naslednici current-state whoplay)));;(new-move-mm)
     (cond 
      ((or (zerop depth) (null new-states))
-      (list current-state (proceni-stanje current-state)))
+      (list current-state (heuristic current-state)))
      ((equal my-move T)
       (max-state (mapcar (lambda (x)
                            (minimax x (1- depth)
@@ -572,7 +572,7 @@
 
 ;;minmax sa alpha-beta
 (defun alpha-beta(state max-depth alpha beta moj-potez pl)
-  (cond ((zerop max-depth) (list state (proceni-stanje state pl)))
+  (cond ((zerop max-depth) (list state (heuristic state)))
         (t (if (null moj-potez)             
                (min-stanje state max-depth alpha beta moj-potez (naslednici state 'x) 'x (list '() '1000))
              (max-stanje state max-depth alpha beta moj-potez (naslednici state 'o) 'o (list '() '-1000))))))
@@ -772,5 +772,5 @@
 ;;heuristika dodati random 
 (defun heuristic(state)
                 (cond((kraj-igre state 'o) '100)
-                      ((> (car (get-number-of-elements-for-sandwich state)) 1) (+ (score state) (+ (car (get-number-of-elements-for-sandwich state)) (cadr(get-number-of-elements-for-sandwich state)))))
-                      (t(score state))))
+                      ((> (car (get-number-of-elements-for-sandwich state)) 1) (+ 10 (score state) (+ (car (get-number-of-elements-for-sandwich state)) (cadr(get-number-of-elements-for-sandwich state)))))
+                      (t(+ (score state) (random 10)))))
