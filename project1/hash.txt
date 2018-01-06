@@ -1,4 +1,4 @@
-(FIRST 1)
-(SECOND 2)
-(THIRD 3)
-(FOURTH 4)
+(((O O O O O O O O O) (O O O O O O O O O) (- - - - - - - - -)
+  (- - - - - - - - -) (- - - - - - - - -) (- - - - - - - - -)
+  (- - - - - - - - -) (X X X X X X X X X) (X X X X X X X X X))
+ 1)

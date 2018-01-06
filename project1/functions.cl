@@ -18,10 +18,11 @@
   ;do (if (equal player 'x) (playmove) (play-machine))))
   (petlja-za-igranje))
 
+;;petlja za igranje
 (defun petlja-za-igranje()
-  (cond ((not (kraj-igre table player)) (if (equal player 'x) (playmove) (play-machine)) (petlja-za-igranje))
-        (t (printtable table tablesize))))
+  (if (not (kraj-igre table player)) (if (equal player 'x) (playmove) (play-machine)) (petlja-za-igranje)))
 
+;;masina igra potez
 (defun play-machine()
   (make-move (alpha-beta table 3 -9999 9999 t player))
   (if (equal player 'o) (setq player 'x) (setq player 'o))
@@ -555,7 +556,7 @@
   (let ((new-states (naslednici current-state whoplay)));;(new-move-mm)
     (cond 
      ((or (zerop depth) (null new-states))
-      (list current-state (heuristic current-state)))
+      (list current-state (heuristic1 current-state)))
      ((equal my-move T)
       (max-state (mapcar (lambda (x)
                            (minimax x (1- depth)
@@ -572,7 +573,7 @@
 
 ;;minmax sa alpha-beta
 (defun alpha-beta(state max-depth alpha beta moj-potez pl)
-  (cond ((zerop max-depth) (list state (heuristic state)))
+  (cond ((zerop max-depth) (list state (heuristic1 state)))
         (t (if (null moj-potez)             
                (min-stanje state max-depth alpha beta moj-potez (naslednici state 'x) 'x (list '() '1000))
              (max-stanje state max-depth alpha beta moj-potez (naslednici state 'o) 'o (list '() '-1000))))))
@@ -628,7 +629,7 @@
 
 ;;pravi hash sa datim nazivom
 (defun napravi-hash()
-  (defparameter *hash-table* (make-hash-table)))
+  (defparameter *hash-table* (make-hash-table :size 1000000)))
 
 ;;ispituje da li postoji u hash-u taj kljuc
 (defun exist-in-hash(key)
@@ -653,7 +654,8 @@
 ;;snima kljuc i vrenost u hash pa zatim u fajl
 (defun save-in-hash(key value)
   (load-in-hash key value)
-  (dodaj-u-fajl key value))
+  (dodaj-u-fajl key value)
+  (get-from-hash key))
 
 ;;uctiava sve vrednosti iz fajla u hash
 (defun load-from-hash()
@@ -774,3 +776,8 @@
                 (cond((kraj-igre state 'o) '100)
                       ((> (car (get-number-of-elements-for-sandwich state)) 1) (+ 10 (score state) (+ (car (get-number-of-elements-for-sandwich state)) (cadr(get-number-of-elements-for-sandwich state)))))
                       (t(+ (score state) (random 10)))))
+
+;;ispitivanje sa hash-om
+(defun heuristic1(state)
+  (cond ((exist-in-hash state) (get-from-hash state))
+        (t (save-in-hash state (heuristic state)))))
