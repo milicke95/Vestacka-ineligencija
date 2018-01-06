@@ -661,3 +661,97 @@
   (let ((L (read-from-string 
            (concatenate 'string s))))
     L))
+
+
+
+;Da li se na toj poziciji nalazi zadati element
+(defun checkElement(dest el table)
+               (cond((equal dest '-) '())
+                     ((equal (get-element-of-table dest table) el) 't)))
+;;broj zadatih elemenata levo od zadate pozicije 
+(defun get-number-of-elements-left(src state number)
+               (cond ((equal (get-element-of-table (list (car src)  (- (cadr src) 1)) state) 'x) (get-number-of-elements-left (list (car src) (- (cadr src) 1)) state (+ number 1)))
+                     (t number)))
+
+;;broj zadatih elemenata desno od zadate pozicije
+(defun get-number-of-elements-right(src state number)
+               (cond ((equal (get-element-of-table (list (car src)  (+ (cadr src) 1)) state) 'x) (get-number-of-elements-right (list (car src) (+ (cadr src) 1)) state (+ number 1)))
+                     (t number)))
+
+;;broj zadatih elemenata gore od zadate pozicije
+(defun get-number-of-elements-top(src state number)
+               (cond ((<= (car src) '3) number)
+                     ((equal (get-element-of-table (list (- (car src) 1)  (cadr src)) state) 'x) (get-number-of-elements-top (list (- (car src) 1)  (cadr src)) state (+ number 1)))
+                     (t number)))
+
+;;broj zadatih elemenata dole od zadate pozicije
+(defun get-number-of-elements-bottom(src state number)
+               (cond ((>= (car src) (- tablesize 2)) number)
+                     ((equal (get-element-of-table (list (+ (car src) 1)  (cadr src)) state) 'x) (get-number-of-elements-bottom (list (+ (car src) 1)  (cadr src)) state (+ number 1)))
+                     (t number)))
+
+;;broj zadatih elemenata gore desno od zadate pozicije
+(defun get-number-of-elements-top-right(src state number)
+  (cond((<= (car src) '3) number)
+        ((equal (cadr src) tablesize) number)
+                     ((checkelement (list (- (car src) 1) (+ (cadr src) 1)) 'x state) (get-number-of-elements-top-right (list (- (car src) 1) (+ (cadr src) 1)) state (+ number 1)))
+                     (t number)))
+
+;;broj zadatih elemenata gore levo od zadate pozicije
+(defun get-number-of-elements-top-left(src state number)
+  (cond((<= (car src) '3) number)
+        ((equal (cadr src) '1) number)
+                     ((checkelement (list (- (car src) 1) (- (cadr src) 1)) 'x state) (get-number-of-elements-top-left (list (- (car src) 1) (- (cadr src) 1)) state (+ number 1)))
+        (t number)))
+
+;;broj zadatih elemenata dole desno od zadate pozicije
+(defun get-number-of-elements-bottom-right(src state number)
+  (cond((>= (car src) (- tablesize 2)) number)
+        ((equal (cadr src) tablesize) number)
+                     ((checkelement (list (+ (car src) 1) (+ (cadr src) 1)) 'x state) (get-number-of-elements-bottom-right (list (+ (car src) 1) (+ (cadr src) 1)) state (+ number 1)))
+                     (t number)))
+
+;;broj zadatih elemenata dole levo od zadate pozicije
+(defun get-number-of-elements-bottom-left(src state number)
+               (cond((>= (car src) (- tablesize 2)) number)
+                     ((equal (cadr src) '1) number)
+                     ((checkelement (list (+ (car src) 1) (- (cadr src) 1)) 'x state) (get-number-of-elements-bottom-left (list (+ (car src) 1) (- (cadr src) 1)) state (+ number 1)))
+                     (t number)))
+
+;;maksimalni broj koji predstavlja koliko se maksimalno elemenata nalazi sa odredjene strane src-a za moguci sendvic
+(defun get-number-of-elements(src state)
+                (let(
+                     (top (get-number-of-elements-top src state '0))
+                     (bottom (get-number-of-elements-bottom src state '0))
+                     (top-right (get-number-of-elements-top-right src state '0))
+                     (top-left (get-number-of-elements-top-left src state '0))
+                     (bottom-right (get-number-of-elements-bottom-right src state '0))
+                     (bottom-left (get-number-of-elements-bottom-left src state '0)))
+                     (cond((and (>= top bottom) (>= top top-right) (>= top top-left) (>= top bottom-right) (>= top bottom-left)) top)
+                           ((and (>= bottom top) (>= bottom top-right) (>= bottom top-left) (>= bottom bottom-right) (>= bottom bottom-left)) bottom)
+                           ((and (>= top-right top) (>= top-right bottom) (>= top-right top-left) (>= top-right bottom-right) (>= top-right bottom-left)) top-right)
+                           ((and (>= top-left top) (>= top-left bottom) (>= top-left top-right) (>= top-left bottom-right) (>= top-left bottom-left)) top-left)
+                           ((and (>= bottom-right top) (>= bottom-right bottom) (>= bottom-right top-right) (>= bottom-right top-left) (>= bottom-right bottom-left)) bottom-right)
+                           ((and (>= bottom-left top) (>= bottom-left bottom) (>= bottom-left top-right) (>= bottom-left top-left) (>= bottom-left bottom-right)) bottom-left))))
+
+
+(defun get-number-of-elements-for-sandwich1(state number i j)
+                (cond((and (equal i tablesize) (equal j (+ tablesize 1))) number)
+                      ((> j tablesize) (get-number-of-elements-for-sandwich1 state number (+ i 1) '1))
+                      ((and (< number (get-number-of-elements (list i j) state)) (equal (get-element-of-table (list i j) state) 'o)) (get-number-of-elements-for-sandwich1 state (get-number-of-elements (list i j) state) i (+ j 1)))
+                      (t(get-number-of-elements-for-sandwich1 state number i (+ j 1)))))
+
+;;za dato stanje racuna maksimalni broj elemenata za moguci sendvic
+(defun get-number-of-elements-for-sandwich(state)
+  (get-number-of-elements-for-sandwich1 state '0 '1 '1))
+
+;;racuna score prema razlici oksa i xsa
+(defun score(tabela)
+  (- (counto tabela) (countx tabela)))
+
+;;heuristika
+(defun evaluate(state)
+                (cond((kraj-igre state 'o) '100)
+                      ((> (get-number-of-elements-for-sandwich state) 3) '98)
+                      ((= (get-number-of-elements-for-sandwich state) 3) '95)
+                      (t(* (score state) (/ 100 (* tablesize 2))))))
