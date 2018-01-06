@@ -15,8 +15,17 @@
   (settable)
   (printtable table tablesize)
   ;(loop while (not (endofgame)) 
-  ;do ((if (equal player 'x) (playmove) (play-machine)))))
-  )
+  ;do (if (equal player 'x) (playmove) (play-machine))))
+  (petlja-za-igranje))
+
+(defun petlja-za-igranje()
+  (cond ((not (kraj-igre table player)) (if (equal player 'x) (playmove) (play-machine)) (petlja-za-igranje))
+        (t (printtable table tablesize))))
+
+(defun play-machine()
+  (make-move (alpha-beta table 3 -9999 9999 t player))
+  (if (equal player 'o) (setq player 'x) (setq player 'o))
+  (printtable table tablesize))
 
 ;;igra potez
 (defun playmove()
@@ -39,9 +48,12 @@
   (setelement src '-)
   (setq played-move dest) 
   ;(update-player-mm)
-  (sandwich table played-move player)
+  (sandwich table dest player)
   (if (equal player 'o) (setq player 'x) (setq player 'o))
   (printtable table tablesize))
+
+(defun make-move(move)
+  (setq table (car move)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -652,6 +664,7 @@
           while line do (load-in-hash (car (from-string-to-list line)) (cadr (from-string-to-list line))))
       (close in))))
 
+
 ;;postavlja kljuc sa vrednostcu u hash
 (defun load-in-hash(key value)
   (setf (gethash key *hash-table*) value))
@@ -662,6 +675,12 @@
            (concatenate 'string s))))
     L))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;;                                                       F-JE HEURISTIKE
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 ;Da li se na toj poziciji nalazi zadati element
