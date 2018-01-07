@@ -27,7 +27,7 @@
 
 ;;masina igra potez
 (defun play-machine()
-  (make-move (alpha-beta table 3 -9999 9999 t player))
+  (make-move (alpha-beta table 7 -9999 9999 t player (get-universal-time)))
   (if (equal player 'o) (setq player 'x) (setq player 'o))
   (printtable table tablesize))
 
@@ -57,7 +57,9 @@
   (printtable table tablesize))
 
 (defun make-move(move)
-  (setq table (car move)))
+  (cond ((equal (cadddr) player) (setq table (car move)))
+        (t (setq table (caddr move)))))
+  
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -600,8 +602,8 @@
         (t 'x)))
 
 ;;minmax sa alpha-beta
-(defun alpha-beta(state max-depth alpha beta moj-potez pl)
-  (cond ((zerop max-depth) (list state (heuristic1 state)))
+(defun alpha-beta(state parent max-depth alpha beta moj-potez pl start-time)
+  (cond ((or (zerop max-depth) (> (- (get-universal-time) start-time ) end-time)) (list state (heuristic1 state) parent pl max-depth))
         (t (if (null moj-potez)             
                (min-stanje state max-depth alpha beta moj-potez (naslednici state 'x) 'x (list '() '1000))
              (max-stanje state max-depth alpha beta moj-potez (naslednici state 'o) 'o (list '() '-1000))))))
@@ -609,7 +611,7 @@
 ;;proverava za max stanje
 (defun max-stanje (state depth alpha beta moj-potez lp pl v)
     (if (null lp) v
-    (let* ((v1 (max2 (alpha-beta (car lp) (1- depth) alpha beta (not moj-potez) (diffpla pl)) v))
+    (let* ((v1 (max2 (alpha-beta (car lp) state (1- depth) alpha beta (not moj-potez) (diffpla pl) start-time) v))
         (a (max1 v1 alpha))
         )
         (if (<= beta a) v1
@@ -622,7 +624,7 @@
 ;;proverava za min stanje
 (defun min-stanje (state depth alpha beta moj-potez lp pl v)
     (if (null lp) v
-    (let* ((v1 (min2 (alpha-beta (car lp) (1- depth) alpha beta (not moj-potez) (diffpla pl)) v))
+    (let* ((v1 (min2 (alpha-beta (car lp) state (1- depth) alpha beta (not moj-potez) (diffpla pl) start-time) v))
         (b (min1 v1 beta))
         )
         (if (<= b alpha) v1
