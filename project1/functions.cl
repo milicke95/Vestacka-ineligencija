@@ -43,8 +43,10 @@
                                  ((srcequaldest source destination) (print "Nevalidan potez, odrediste ne sme biti jednako polaznom polju") (playmove))
                                  ((= (fieldsaway source destination) 0) (print "Nevalidan potez, potezi se mogu odigrati vertikalno ili horizontalno") (playmove))
                                  ((and (> (fieldsaway source destination) 2) (has-barrier source destination)) (print "Nevalidan potez, imate prepreku na putu") (playmove))
-                                 ((and (= (fieldsaway source destination) 2) (has-barrier source destination)) (playmove1 source destination))
-                                 (t (playmove1 source destination))))))))
+                                 ((and (= (fieldsaway source destination) 2) (has-barrier source destination) (equal (get-element-of-table destination table) '-)) (playmove1 source destination))
+                                 ((equal (get-element-of-table destination table) '-) (playmove1 source destination) )
+                                 (t(print "Nevalidan potez") (playmove))))))))
+
 
 ;;igra potez na tabeli
 (defun playmove1(src dest)
@@ -165,6 +167,29 @@
 ;;ukljanja sve figure koje su u sandwich-u
 (defun sandwich(ta m p)
   (stand-in-trap (sand-up (sand-down (sand-right (sand-left ta m p) m p) m p) m p) m p))
+
+(defun stand-in-trap(ta m p)
+  (sint-up (sint-down (sint-right (sint-left ta m p) m p) m p) m p))
+
+(defun sint-up(tabl mov pl)
+  (cond ((and (<= (1+ (car mov)) tablesize) (equal (get-element-of-table (list (1+ (car mov)) (cadr mov)) tabl) (diffpla pl))) 
+         (sand-down tabl (list (1+ (car mov)) (cadr mov)) (diffpla pl)))
+        (t tabl)))
+
+(defun sint-down(tabl mov pl)
+  (cond ((and (>= (1- (car mov)) 1) (equal (get-element-of-table (list (1- (car mov)) (cadr mov)) tabl) (diffpla pl))) 
+         (sand-up tabl (list (1- (car mov)) (cadr mov)) (diffpla pl)))
+        (t tabl)))
+
+(defun sint-right(tabl mov pl)
+  (cond ((and (<= (1+ (cadr mov)) tablesize) (equal (get-element-of-table (list (car mov) (1+ (cadr mov))) tabl) (diffpla pl))) 
+         (sand-left tabl (list (car mov) (1+ (cadr mov))) (diffpla pl)))
+        (t tabl)))
+
+(defun sint-left(tabl mov pl)
+  (cond ((and (>= (1- (cadr mov)) 1) (equal (get-element-of-table (list (car mov) (1- (cadr mov))) tabl) (diffpla pl))) 
+         (sand-right tabl (list (car mov) (1- (cadr mov))) (diffpla pl)))
+        (t tabl)))
 
 ;;uklanja gore sandwich od zadate pozicije
 (defun remove-sandwich-u(tabl move dest)
@@ -586,7 +611,7 @@
   (let ((new-states (naslednici current-state whoplay)));;(new-move-mm)
     (cond 
      ((or (zerop depth) (null new-states))
-      (list current-state (heuristic1 current-state)))
+      (list current-state (heuristic current-state)))
      ((equal my-move T)
       (max-state (mapcar (lambda (x)
                            (minimax x (1- depth)
@@ -675,7 +700,7 @@
 
 ;;upisuje u fajl hash 
 (defun dodaj-u-fajl(key value)
-  (with-open-file (str "D:\\Faks\\VII semestar\\Vestacka inteligencija\\Vestacka-ineligencija\\project1\\hash.txt"
+  (with-open-file (str "D:\\GitHub\\Vestacka-ineligencija\\project1\\hash.txt"
                      :direction :output
                      :if-exists :append
                      :if-does-not-exist :create)
@@ -689,7 +714,7 @@
 
 ;;uctiava sve vrednosti iz fajla u hash
 (defun load-from-hash()
-  (let ((in (open "D:\\Faks\\VII semestar\\Vestacka inteligencija\\Vestacka-ineligencija\\project1\\hash.txt"
+  (let ((in (open "D:\\GitHub\\Vestacka-ineligencija\\project1\\hash.txt"
                   :if-does-not-exist nil)))
     (when in
       (loop for line = (read in nil)
@@ -745,13 +770,15 @@
                      ((equal (get-element-of-table dest table) el) 't)))
 ;;broj zadatih elemenata levo od zadate pozicije 
 (defun get-number-of-elements-left(src state number)
-               (cond ((equal (get-element-of-table (list (car src)  (- (cadr src) 1)) state) 'x) (get-number-of-elements-left (list (car src) (- (cadr src) 1)) state (+ number 1)))
-                     (t number)))
+  (cond((= (cadr src) 1) number)
+        ((equal (get-element-of-table (list (car src)  (- (cadr src) 1)) state) 'x) (get-number-of-elements-left (list (car src) (- (cadr src) 1)) state (+ number 1)))
+        (t number)))
 
 ;;broj zadatih elemenata desno od zadate pozicije
 (defun get-number-of-elements-right(src state number)
-               (cond ((equal (get-element-of-table (list (car src)  (+ (cadr src) 1)) state) 'x) (get-number-of-elements-right (list (car src) (+ (cadr src) 1)) state (+ number 1)))
-                     (t number)))
+  (cond ((= (cadr src) tablesize) number)
+        ((equal (get-element-of-table (list (car src)  (+ (cadr src) 1)) state) 'x) (get-number-of-elements-right (list (car src) (+ (cadr src) 1)) state (+ number 1)))
+        (t number)))
 
 ;;broj zadatih elemenata gore od zadate pozicije
 (defun get-number-of-elements-top(src state number)
@@ -798,17 +825,93 @@
                 (let(
                      (top (get-number-of-elements-top src state '0))
                      (bottom (get-number-of-elements-bottom src state '0))
+                     (left (get-number-of-elements-left src state '0))
+                     (right (get-number-of-elements-right src state '0))
                      (top-right (get-number-of-elements-top-right src state '0))
                      (top-left (get-number-of-elements-top-left src state '0))
                      (bottom-right (get-number-of-elements-bottom-right src state '0))
                      (bottom-left (get-number-of-elements-bottom-left src state '0)))
-                     (cond((and (>= top bottom) (>= top top-right) (>= top top-left) (>= top bottom-right) (>= top bottom-left)) top)
-                           ((and (>= bottom top) (>= bottom top-right) (>= bottom top-left) (>= bottom bottom-right) (>= bottom bottom-left)) bottom)
-                           ((and (>= top-right top) (>= top-right bottom) (>= top-right top-left) (>= top-right bottom-right) (>= top-right bottom-left)) top-right)
-                           ((and (>= top-left top) (>= top-left bottom) (>= top-left top-right) (>= top-left bottom-right) (>= top-left bottom-left)) top-left)
-                           ((and (>= bottom-right top) (>= bottom-right bottom) (>= bottom-right top-right) (>= bottom-right top-left) (>= bottom-right bottom-left)) bottom-right)
-                           ((and (>= bottom-left top) (>= bottom-left bottom) (>= bottom-left top-right) (>= bottom-left top-left) (>= bottom-left bottom-right)) bottom-left))))
+                     (cond((and (>= top bottom) (>= top left) (>= top right) (>= top top-right) (>= top top-left) (>= top bottom-right) (>= top bottom-left)) top)
+                           ((and (>= bottom top) (>= bottom left) (>= bottom right) (>= bottom top-right) (>= bottom top-left) (>= bottom bottom-right) (>= bottom bottom-left)) bottom)
+                           ((and (>= top-right top) (>= top-right left) (>= top-right right) (>= top-right bottom) (>= top-right top-left) (>= top-right bottom-right) (>= top-right bottom-left)) top-right)
+                           ((and (>= top-left top) (>= top-left left) (>= top-left right) (>= top-left bottom) (>= top-left top-right) (>= top-left bottom-right) (>= top-left bottom-left)) top-left)
+                           ((and (>= bottom-right top) (>= bottom-right left) (>= bottom-right right) (>= bottom-right bottom) (>= bottom-right top-right) (>= bottom-right top-left) (>= bottom-right bottom-left)) bottom-right)
+                           ((and (>= bottom-left top) (>= bottom-left left) (>= bottom-left right) (>= bottom-left bottom)  (>= bottom-left top-right) (>= bottom-left top-left) (>= bottom-left bottom-right)) bottom-left)
+                           ((and (>= left top) (>= left bottom) (>= left right) (>= left top-right) (>= left top-left) (>= left bottom-right) (>= left bottom-left)) left)
+                           ((and (>= right top) (>= right bottom) (>= right left) (>= right top-right) (>= right top-left) (>= right bottom-right) (>= right bottom-left)) right))))
+               
+(defun get-number-of-elements-o(src state)
+  (let(
+       (top (get-number-of-elements-top-o src state '0))
+       (bottom (get-number-of-elements-bottom-o src state '0))
+       (top-right (get-number-of-elements-top-right-o src state '0))
+       (top-left (get-number-of-elements-top-left-o src state '0))
+       (bottom-right (get-number-of-elements-bottom-right-o src state '0))
+       (bottom-left (get-number-of-elements-bottom-left-o src state '0)))
+    (cond((and (>= top bottom) (>= top top-right) (>= top top-left) (>= top bottom-right) (>= top bottom-left)) top)
+          ((and (>= bottom top)  (>= bottom top-right) (>= bottom top-left) (>= bottom bottom-right) (>= bottom bottom-left)) bottom)
+          ((and (>= top-right top)  (>= top-right bottom) (>= top-right top-left) (>= top-right bottom-right) (>= top-right bottom-left)) top-right)
+          ((and (>= top-left top)  (>= top-left bottom) (>= top-left top-right) (>= top-left bottom-right) (>= top-left bottom-left)) top-left)
+          ((and (>= bottom-right top)  (>= bottom-right bottom) (>= bottom-right top-right) (>= bottom-right top-left) (>= bottom-right bottom-left)) bottom-right)
+          ((and (>= bottom-left top) (>= bottom-left bottom)  (>= bottom-left top-right) (>= bottom-left top-left) (>= bottom-left bottom-right)) bottom-left))))
 
+(defun calculate-adjecent-friendly-pawns1(state number i j)
+  (cond((and (= i tablesize) (> j tablesize)) number)
+        ((> j tablesize) (calculate-adjecent-friendly-pawns1 state number (+ i 1) '1))
+        ((and (> i 2) (<= i (- tablesize 2)) (< number (+ (get-number-of-elements-o (list i j) state) 1)) (equal (get-element-of-table (list i j) state) 'o)) (calculate-adjecent-friendly-pawns1 state (+ (get-number-of-elements-o (list i j) state) 1) i (+ j 1)))
+        (t(calculate-adjecent-friendly-pawns1 state number i (+ j 1)))))
+
+
+(defun calculate-adjecent-friendly-pawns(state)
+  (calculate-adjecent-friendly-pawns1 state '0 '1 '1))
+
+(defun get-number-of-elements-top-o(src state number)
+               (cond ((<= (car src) '3) number)
+                     ((equal (get-element-of-table (list (- (car src) 1)  (cadr src)) state) 'o) (get-number-of-elements-top-o (list (- (car src) 1)  (cadr src)) state (+ number 1)))
+                     (t number)))
+
+;;broj o elemenata dole od zadate pozicije
+(defun get-number-of-elements-bottom-o(src state number)
+               (cond ((>= (car src) (- tablesize 2)) number)
+                     ((equal (get-element-of-table (list (+ (car src) 1)  (cadr src)) state) 'o) (get-number-of-elements-bottom-o (list (+ (car src) 1)  (cadr src)) state (+ number 1)))
+                     (t number)))
+
+;;broj o elemenata gore desno od zadate pozicije
+(defun get-number-of-elements-top-right-o(src state number)
+  (cond((<= (car src) '3) number)
+        ((equal (cadr src) tablesize) number)
+                     ((checkelement (list (- (car src) 1) (+ (cadr src) 1)) 'o state) (get-number-of-elements-top-right-o (list (- (car src) 1) (+ (cadr src) 1)) state (+ number 1)))
+                     (t number)))
+
+;;broj o elemenata gore levo od zadate pozicije
+(defun get-number-of-elements-top-left-o(src state number)
+  (cond((<= (car src) '3) number)
+        ((equal (cadr src) '1) number)
+                     ((checkelement (list (- (car src) 1) (- (cadr src) 1)) 'o state) (get-number-of-elements-top-left-o (list (- (car src) 1) (- (cadr src) 1)) state (+ number 1)))
+        (t number)))
+
+;;broj o elemenata dole desno od zadate pozicije
+(defun get-number-of-elements-bottom-right-o(src state number)
+  (cond((>= (car src) (- tablesize 2)) number)
+        ((equal (cadr src) tablesize) number)
+                     ((checkelement (list (+ (car src) 1) (+ (cadr src) 1)) 'o state) (get-number-of-elements-bottom-right-o (list (+ (car src) 1) (+ (cadr src) 1)) state (+ number 1)))
+                     (t number)))
+
+;;broj o elemenata dole levo od zadate pozicije
+(defun get-number-of-elements-bottom-left-o(src state number)
+               (cond((>= (car src) (- tablesize 2)) number)
+                     ((equal (cadr src) '1) number)
+                     ((checkelement (list (+ (car src) 1) (- (cadr src) 1)) 'o state) (get-number-of-elements-bottom-left-o (list (+ (car src) 1) (- (cadr src) 1)) state (+ number 1)))
+                     (t number)))
+
+(defun number-of-possible-attacks1(state i j number)
+              (cond((and (= i tablesize) (> j tablesize)) number)
+                    ((> j tablesize) (number-of-possible-attacks1 state (+ 1 i) '1 number))
+                    ((and (>= (get-number-of-elements (list i j) state) 2) (equal (get-element-of-table (list i j) state) 'o)) (number-of-possible-attacks1 state i (+ 1 j) (+ 1 number)))
+                    (t(number-of-possible-attacks1 state i (+ j 1) number))))
+
+(defun number-of-possible-attacks(state)
+  (number-of-possible-attacks1 state '1 '1 '0))
 
 (defun get-number-of-elements-for-sandwich1(state number overlap i j)
                 (cond((and (equal i tablesize) (equal j (+ tablesize 1))) (list number overlap))
@@ -825,11 +928,18 @@
 (defun score(tabela)
   (- (counto tabela) (countx tabela)))
 
+;;racuna ukupan score u odnosu na parenta
+(defun calculate-score(current successor)
+               (let(
+                    (result (- (score successor) (score current))))
+                 (cond((> result '0) (* result 20))
+                       (t result))))
+
 ;;heuristika dodati random 
 (defun heuristic(state)
                 (cond((kraj-igre state 'o) '100)
-                      ((> (car (get-number-of-elements-for-sandwich state)) 1) (+ 10 (score state) (+ (car (get-number-of-elements-for-sandwich state)) (cadr(get-number-of-elements-for-sandwich state)))))
-                      (t(+ (score state) (random 10)))))
+                      ((> (car (get-number-of-elements-for-sandwich state)) 1) (+ 10 (calculate-adjecent-friendly-pawns state) (calculate-score table state) (number-of-possible-attacks state) (+ (car (get-number-of-elements-for-sandwich state)) (cadr(get-number-of-elements-for-sandwich state)))))
+                      (t(+ (calculate-score table state)))))
 
 ;;ispitivanje sa hash-om
 (defun heuristic1(state)
