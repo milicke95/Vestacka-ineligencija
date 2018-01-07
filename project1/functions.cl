@@ -8,8 +8,10 @@
 
 ;;pocetak igre
 (defun main()
-  (napravi-hash)
-  (load-from-hash)
+  ;(napravi-hash)
+  (connect-to-database)
+  ;(load-from-hash)
+  (maphash (lambda (key value)(format str "~a~b" (list key value) #\newline)) *hash-table*)
   (settablesize)
   (whoisplayingfirst)
   (settable)
@@ -20,7 +22,8 @@
 
 ;;petlja za igranje
 (defun petlja-za-igranje()
-  (if (not (kraj-igre table player)) (if (equal player 'x) (playmove) (play-machine)) (petlja-za-igranje)))
+  (cond ((not (kraj-igre table (diffpla player))) (if (equal player 'x) (playmove) (play-machine)) (petlja-za-igranje))
+        (t (printtable table) (snapshot) (disconnect-db))))
 
 ;;masina igra potez
 (defun play-machine()
@@ -49,7 +52,7 @@
   (setelement src '-)
   (setq played-move dest) 
   ;(update-player-mm)
-  (sandwich table dest player)
+  (setq table (sandwich table dest player))
   (if (equal player 'o) (setq player 'x) (setq player 'o))
   (printtable table tablesize))
 
@@ -121,7 +124,8 @@
 
 ;;vraca element sa tabele za zadato polje
 (defun get-element-of-table(dest tabl)
-  (nth (- (cadr dest) 1) (nth (- (car dest) 1) tabl)))
+  (cond ((or (> (car dest) tablesize) (> (cadr dest) tablesize) (< (car dest) 1) (< (cadr dest) 1)) '()) 
+        (t (nth (- (cadr dest) 1) (nth (- (car dest) 1) tabl)))))
 
 (defun setElementoflist(list ind val)
   (cond((null list)'())
@@ -158,7 +162,7 @@
 
 ;;ukljanja sve figure koje su u sandwich-u
 (defun sandwich(ta m p)
-  (sand-up (sand-down (sand-right (sand-left ta m p) m p) m p) m p))
+  (stand-in-trap (sand-up (sand-down (sand-right (sand-left ta m p) m p) m p) m p) m p))
 
 ;;uklanja gore sandwich od zadate pozicije
 (defun remove-sandwich-u(tabl move dest)
@@ -179,6 +183,30 @@
 (defun remove-sandwich-l(tabl move dest)
   (cond ((equal move dest) tabl)
         (t (remove-sandwich-l (set-element move tabl '-) (list (car move) (- (cadr move) 1)) dest))))
+
+;;proverava da li je upao u zamku
+(defun stand-in-trap(ta m p)
+  (sint-up (sint-down (sint-right (sint-left ta m p) m p) m p) m p))
+
+(defun sint-up(tabl mov pl)
+  (cond ((and (<= (1+ (car mov)) tablesize) (equal (get-element-of-table (list (1+ (car mov)) (cadr mov)) tabl) (diffpla pl))) 
+         (sand-down tabl (list (1+ (car mov)) (cadr mov)) (diffpla pl)))
+        (t tabl)))
+
+(defun sint-down(tabl mov pl)
+  (cond ((and (>= (1- (car mov)) 1) (equal (get-element-of-table (list (1- (car mov)) (cadr mov)) tabl) (diffpla pl))) 
+         (sand-up tabl (list (1- (car mov)) (cadr mov)) (diffpla pl)))
+        (t tabl)))
+
+(defun sint-right(tabl mov pl)
+  (cond ((and (<= (1+ (cadr mov)) tablesize) (equal (get-element-of-table (list (car mov) (1+ (cadr mov))) tabl) (diffpla pl))) 
+         (sand-left tabl (list (car mov) (1+ (cadr mov))) (diffpla pl)))
+        (t tabl)))
+
+(defun sint-left(tabl mov pl)
+  (cond ((and (>= (1- (cadr mov)) 1) (equal (get-element-of-table (list (car mov) (1- (cadr mov))) tabl) (diffpla pl))) 
+         (sand-right tabl (list (car mov) (1- (cadr mov))) (diffpla pl)))
+        (t tabl)))
 
 ;;pomocna f-ja za proveru gore sandwich od zadate pozicije
 (defun sand-up(ta m p)
@@ -354,20 +382,20 @@
 
 ;;dijagonalno dole
 (defun check-end-dd(tabl pla i)
-  (if (and (equal pla (get-element-of-table (list '3 (+ i 1)) tabl))
-           (equal pla (get-element-of-table (list '4 (+ i 2)) tabl))
-           (equal pla (get-element-of-table (list '5 (+ i 3)) tabl))
-           (equal pla (get-element-of-table (list '6 (+ i 4)) tabl))
-           (equal pla (get-element-of-table (list '7 (+ i 5)) tabl)))
+  (if (and (equal pla (get-element-of-table (list '3 i) tabl))
+           (equal pla (get-element-of-table (list '4 (+ i 1)) tabl))
+           (equal pla (get-element-of-table (list '5 (+ i 2)) tabl))
+           (equal pla (get-element-of-table (list '6 (+ i 3)) tabl))
+           (equal pla (get-element-of-table (list '7 (+ i 4)) tabl)))
       t '()))
 
 ;;dijagonalno gore
 (defun check-end-du(tabl pla i)
-  (if (and (equal pla (get-element-of-table (list '7 (+ i 1)) tabl))
-           (equal pla (get-element-of-table (list '6 (+ i 2)) tabl))
-           (equal pla (get-element-of-table (list '5 (+ i 3)) tabl))
-           (equal pla (get-element-of-table (list '4 (+ i 4)) tabl))
-           (equal pla (get-element-of-table (list '3 (+ i 5)) tabl)))
+  (if (and (equal pla (get-element-of-table (list '7 i) tabl))
+           (equal pla (get-element-of-table (list '6 (+ i 1)) tabl))
+           (equal pla (get-element-of-table (list '5 (+ i 2)) tabl))
+           (equal pla (get-element-of-table (list '4 (+ i 3)) tabl))
+           (equal pla (get-element-of-table (list '3 (+ i 4)) tabl)))
       t '()))
 
 
@@ -629,7 +657,7 @@
 
 ;;pravi hash sa datim nazivom
 (defun napravi-hash()
-  (defparameter *hash-table* (make-hash-table :size 1000000)))
+  (defparameter *hash-table* (make-hash-table :size 100000)))
 
 ;;ispituje da li postoji u hash-u taj kljuc
 (defun exist-in-hash(key)
@@ -662,8 +690,9 @@
   (let ((in (open "D:\\Faks\\VII semestar\\Vestacka inteligencija\\Vestacka-ineligencija\\project1\\hash.txt"
                   :if-does-not-exist nil)))
     (when in
-      (loop for line = (read-line in nil)
-          while line do (load-in-hash (car (from-string-to-list line)) (cadr (from-string-to-list line))))
+      (loop for line = (read in nil)
+            ;while line do (load-in-hash (car (from-string-to-list line)) (cadr (from-string-to-list line))))
+            while line do (load-in-hash (car line) (cadr line)))
       (close in))))
 
 
@@ -676,6 +705,29 @@
   (let ((L (read-from-string 
            (concatenate 'string s))))
     L))
+
+;;snimanje u redis
+(defun save-redis(key value)
+  (red:set key value)
+  (find-redis key))
+
+;;pribavljanje iz redisa
+(defun find-redis(key)
+  (cond ((red:get key) (from-string-to-list (red:get key)))
+        (t '())))
+
+;;snimi snapshot
+(defun snapshot()
+  (red:save))
+
+;;pravljenje konekcije
+(defun connect-to-database()
+  ;(ql:quickload 'cl-redis)
+  (redis:connect :host "127.0.0.1" :port '6379))
+
+;;disconnectovanje
+(defun disconnect-db()
+  (redis:disconnect))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -779,5 +831,5 @@
 
 ;;ispitivanje sa hash-om
 (defun heuristic1(state)
-  (cond ((exist-in-hash state) (get-from-hash state))
-        (t (save-in-hash state (heuristic state)))))
+  (cond ((find-redis state) (find-redis state))
+        (t (save-redis state (heuristic state)))))

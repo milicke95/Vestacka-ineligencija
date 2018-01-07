@@ -155,3 +155,34 @@
 (defun minimax-alpha-beta (start-state max-depth my-move whoplay)
   (list start-state (alpha-beta start-state '0 max-depth my-move -99999 99999 whoplay)))
 
+(defun alpha-beta(state max-depth alpha beta pl)
+  (cond ((zerop max-depth) (list state (heuristic1 state)))
+        (t (if (equal pl 'x)             
+               (min-stanje state max-depth alpha beta (naslednici state pl) pl (list '() '1000))
+             (max-stanje state max-depth alpha beta (naslednici state pl) pl (list '() '-1000))))))
+
+;;proverava za max stanje
+(defun max-stanje (state depth alpha beta lp pl v)
+    (if (null lp) v
+    (let* ((v1 (max2 (alpha-beta (car lp) (1- depth) alpha beta (diffpla pl)) v))
+        (a (max1 v1 alpha))
+        )
+        (if (<= beta a) v1
+            (max-stanje state depth a beta (cdr lp) pl v1)
+        )
+    )
+    )
+)
+
+;;proverava za min stanje
+(defun min-stanje (state depth alpha beta lp pl v)
+    (if (null lp) v
+    (let* ((v1 (min2 (alpha-beta (car lp) (1- depth) alpha beta (diffpla pl)) v))
+        (b (min1 v1 beta))
+        )
+        (if (<= b alpha) v1
+            (min-stanje state depth alpha b (cdr lp) pl v1)
+        )
+    )
+    )
+  )
