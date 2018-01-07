@@ -8,7 +8,7 @@
 
 ;;pocetak igre
 (defun main()
-  ;(napravi-hash)
+  (napravi-hash)
   (connect-to-database)
   ;(load-from-hash)
   (maphash (lambda (key value)(format str "~a~b" (list key value) #\newline)) *hash-table*)
@@ -59,8 +59,9 @@
   (printtable table tablesize))
 
 (defun make-move(move)
-  (cond ((equal (cadddr) player) (setq table (car move)))
-        (t (setq table (caddr move)))))
+  (cond ((exist-in-hash move) (get-from-hash move))
+        ((equal (cadddr) player) (setq table (load-in-hash (car move))))
+        (t (setq table (load-in-hash (caddr move))))))
   
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -749,12 +750,13 @@
 
 ;;pravljenje konekcije
 (defun connect-to-database()
-  ;(ql:quickload 'cl-redis)
   (redis:connect :host "127.0.0.1" :port '6379))
 
 ;;disconnectovanje
 (defun disconnect-db()
   (redis:disconnect))
+
+;(ql:quickload 'cl-redis)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
