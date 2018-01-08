@@ -11,7 +11,7 @@
   (napravi-hash)
   (connect-to-database)
   ;(load-from-hash)
-  (maphash (lambda (key value)(format str "~a~b" (list key value) #\newline)) *hash-table*)
+  ;(maphash (lambda (key value)(format str "~a~b" (list key value) #\newline)) *hash-table*)
   (settablesize)
   (whoisplayingfirst)
   (settable)
@@ -23,11 +23,11 @@
 ;;petlja za igranje
 (defun petlja-za-igranje()
   (cond ((not (kraj-igre table (diffpla player))) (if (equal player 'x) (playmove) (play-machine)) (petlja-za-igranje))
-        (t (printtable table) (snapshot) (disconnect-db))))
+        (t (printtable table tablesize) (snapshot) (disconnect-db))))
 
 ;;masina igra potez
 (defun play-machine()
-  (make-move (alpha-beta table 7 -9999 9999 t player (get-universal-time)))
+  (make-move (alpha-beta table table 9 -9999 9999 t player (get-universal-time)))
   (if (equal player 'o) (setq player 'x) (setq player 'o))
   (printtable table tablesize))
 
@@ -60,8 +60,8 @@
 
 (defun make-move(move)
   (cond ((exist-in-hash move) (get-from-hash move))
-        ((equal (cadddr) player) (setq table (load-in-hash (car move))))
-        (t (setq table (load-in-hash (caddr move))))))
+        ((equal (cadddr move) (diffpla player)) (setq table (load-in-hash move (car move))))
+        (t (setq table (load-in-hash move (caddr move))))))
   
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -631,30 +631,30 @@
 (defun alpha-beta(state parent max-depth alpha beta moj-potez pl start-time)
   (cond ((or (zerop max-depth) (> (- (get-universal-time) start-time ) end-time)) (list state (heuristic1 state) parent pl max-depth))
         (t (if (null moj-potez)             
-               (min-stanje state max-depth alpha beta moj-potez (naslednici state 'x) 'x (list '() '1000))
-             (max-stanje state max-depth alpha beta moj-potez (naslednici state 'o) 'o (list '() '-1000))))))
+               (min-stanje state max-depth alpha beta moj-potez (naslednici state pl) pl (list '() '1000) start-time)
+             (max-stanje state max-depth alpha beta moj-potez (naslednici state pl) pl (list '() '-1000) start-time)))))
 
 ;;proverava za max stanje
-(defun max-stanje (state depth alpha beta moj-potez lp pl v)
+(defun max-stanje (state depth alpha beta moj-potez lp pl v start-time)
     (if (null lp) v
     (let* ((v1 (max2 (alpha-beta (car lp) state (1- depth) alpha beta (not moj-potez) (diffpla pl) start-time) v))
         (a (max1 v1 alpha))
         )
         (if (<= beta a) v1
-            (max-stanje state depth a beta moj-potez (cdr lp) pl v1)
+            (max-stanje state depth a beta moj-potez (cdr lp) pl v1 start-time)
         )
     )
     )
 )
 
 ;;proverava za min stanje
-(defun min-stanje (state depth alpha beta moj-potez lp pl v)
+(defun min-stanje (state depth alpha beta moj-potez lp pl v start-time)
     (if (null lp) v
     (let* ((v1 (min2 (alpha-beta (car lp) state (1- depth) alpha beta (not moj-potez) (diffpla pl) start-time) v))
         (b (min1 v1 beta))
         )
         (if (<= b alpha) v1
-            (min-stanje state depth alpha b moj-potez (cdr lp) pl v1)
+            (min-stanje state depth alpha b moj-potez (cdr lp) pl v1 start-time)
         )
     )
     )
@@ -770,6 +770,7 @@
 (defun checkElement(dest el table)
                (cond((equal dest '-) '())
                      ((equal (get-element-of-table dest table) el) 't)))
+
 ;;broj zadatih elemenata levo od zadate pozicije 
 (defun get-number-of-elements-left(src state number)
   (cond((= (cadr src) 1) number)
@@ -922,6 +923,18 @@
                       ((and (= number (get-number-of-elements (list i j) state)) (equal (get-element-of-table (list i j) state) 'o)) (get-number-of-elements-for-sandwich1 state number (+ 1 overlap) i (+ j 1)))
                       (t(get-number-of-elements-for-sandwich1 state number overlap i (+ j 1)))))
 
+
+(defun number-of-adjecent-friendly-pawns1(state i j number)
+              (cond((and (= i tablesize) (> j tablesize)) (floor number 2))
+                    ((> j tablesize) (number-of-adjecent-friendly-pawns1 state (+ 1 i) '1 number))
+                    ((and (> i 2) (<= i (- tablesize 2)) (> (get-number-of-elements-o (list i j) state) 0) (equal (get-element-of-table (list i j) state) 'o)) (number-of-adjecent-friendly-pawns1 state i (+ 1 j) (+ 1 number)))
+                    (t(number-of-adjecent-friendly-pawns1 state i (+ j 1) number))))
+
+(defun number-of-adjecent-friendly-pawns(state)
+               (number-of-adjecent-friendly-pawns1 state '1 '1 '0))
+
+
+
 ;;za dato stanje racuna maksimalni broj elemenata za moguci sendvic
 (defun get-number-of-elements-for-sandwich(state)
   (get-number-of-elements-for-sandwich1 state '0 '0 '1 '1))
@@ -937,11 +950,11 @@
                  (cond((> result '0) (* result 20))
                        (t result))))
 
-;;heuristika dodati random 
+;;heuristika
 (defun heuristic(state)
-                (cond((kraj-igre state 'o) '100)
-                      ((> (car (get-number-of-elements-for-sandwich state)) 1) (+ 10 (calculate-adjecent-friendly-pawns state) (calculate-score table state) (number-of-possible-attacks state) (+ (car (get-number-of-elements-for-sandwich state)) (cadr(get-number-of-elements-for-sandwich state)))))
-                      (t(+ (calculate-score table state)))))
+                (cond((kraj-igre state 'o) '1000)
+                      ((> (car (get-number-of-elements-for-sandwich state)) 1) (+ 10 (* (calculate-adjecent-friendly-pawns state) 6) (number-of-adjecent-friendly-pawns state) (calculate-score table state) (number-of-possible-attacks state) (+ (car (get-number-of-elements-for-sandwich state)) (cadr(get-number-of-elements-for-sandwich state)))))
+                      (t(+ (* (calculate-adjecent-friendly-pawns state) 6) (number-of-adjecent-friendly-pawns state) (calculate-score table state)))))
 
 ;;ispitivanje sa hash-om
 (defun heuristic1(state)
