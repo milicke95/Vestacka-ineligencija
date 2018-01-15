@@ -960,3 +960,107 @@
 (defun heuristic1(state)
   (cond ((find-redis state) (find-redis state))
         (t (save-redis state (heuristic state)))))
+
+(defparameter *T1-RULES* '(
+	(if (and (Cinjenica ?vrednost ?parametar ?igrac) (Ocena_ ?vrednost ?ocena)) then (Oceni ?parametar ?igrac ?ocena))
+
+	(if (and (OKS_BROJ ?vrednost) (!eq ?parametar 'broj_figura) (!eq ?igrac 'oks)) then (Cinjenica ?vrednost ?parametar ?igrac))
+	(if (and (IKS_BROJ ?vrednost) (!eq ?parametar 'broj_figura) (!eq ?igrac 'iks)) then (Cinjenica ?vrednost ?parametar ?igrac))
+	
+	(if (!eq ?vrednost 0) then (Ocena_ ?vrednost 0))
+	(if (and (!gd ?vrednost 0) (!ld ?vrednost 2)) then (Ocena_ ?vrednost 1))
+	(if (and (!gd ?vrednost 1) (!ld ?vrednost 3)) then (Ocena_ ?vrednost 2))
+	(if (and (!gd ?vrednost 2) (!ld ?vrednost 4)) then (Ocena_ ?vrednost 3))
+	(if (and (!gd ?vrednost 3) (!ld ?vrednost 5)) then (Ocena_ ?vrednost 4))
+	(if (and (!gd ?vrednost 4) (!ld ?vrednost 6)) then (Ocena_ ?vrednost 5))
+	(if (and (!gd ?vrednost 5) (!ld ?vrednost 7)) then (Ocena_ ?vrednost 6))
+	
+	;Definicija ocenjivanja za centralnost figura
+	(if (and (OKS_POREDJANE ?vrednost) (!eq ?parametar 'poredjanost) (!eq ?igrac 'oks)) then (Cinjenica ?vrednost ?parametar ?igrac))
+	(if (and (IKS_POREDJANE ?vrednost) (!eq ?parametar 'poredjanost) (!eq ?igrac 'iks)) then (Cinjenica ?vrednost ?parametar ?igrac))
+	
+	(if (!eq ?vrednost 20) then (Ocena_ ?vrednost 0))
+	(if (and (!gd ?vrednost 20) (!ld ?vrednost 27)) then (Ocena_ ?vrednost 1))
+	(if (and (!gd ?vrednost 26) (!ld ?vrednost 33)) then (Ocena_ ?vrednost 2))
+	(if (and (!gd ?vrednost 32) (!ld ?vrednost 39)) then (Ocena_ ?vrednost 3))
+	(if (and (!gd ?vrednost 38) (!ld ?vrednost 45)) then (Ocena_ ?vrednost 4))
+	(if (and (!gd ?vrednost 44) (!ld ?vrednost 51)) then (Ocena_ ?vrednost 5))
+	(if (and (!gd ?vrednost 50) (!ld ?vrednost 57)) then (Ocena_ ?vrednost 6))
+	
+	;Definicija ocenjivanja za koherentnost figura
+	(if (and (OKS_SANDWICH ?vrednost) (!eq ?parametar 'sandwich) (!eq ?igrac 'oks)) then (Cinjenica ?vrednost ?parametar ?igrac))
+	(if (and (IKS_SANDWICH ?vrednost) (!eq ?parametar 'sandwich) (!eq ?igrac 'iks)) then (Cinjenica ?vrednost ?parametar ?igrac))
+	
+	(if (!eq ?vrednost 0) then (Ocena_ ?vrednost 0))
+	(if (and (!gd ?vrednost 0) (!ld ?vrednost 11)) then (Ocena_ ?vrednost 1))
+	(if (and (!gd ?vrednost 10) (!ld ?vrednost 21)) then (Ocena_ ?vrednost 2))
+	(if (and (!gd ?vrednost 20) (!ld ?vrednost 31)) then (Ocena_ ?vrednost 3))
+	(if (and (!gd ?vrednost 30) (!ld ?vrednost 41)) then (Ocena_ ?vrednost 4))
+	(if (and (!gd ?vrednost 40) (!ld ?vrednost 51)) then (Ocena_ ?vrednost 5))
+	(if (and (!gd ?vrednost 50) (!ld ?vrednost 59)) then (Ocena_ ?vrednost 6))
+	
+	;Definicija ocenjivanja za blokiranost figura
+	(if (and (OKS_BLOKIRANOST ?vrednost) (!eq ?parametar 'blokiranost) (!eq ?igrac 'oks)) then (Cinjenica ?vrednost ?parametar ?igrac))
+	(if (and (IKS_BLOKIRANOST ?vrednost) (!eq ?parametar 'blokiranost) (!eq ?igrac 'iks)) then (Cinjenica ?vrednost ?parametar ?igrac))
+	
+	(if (!eq ?vrednost 0) then (Ocena_ ?vrednost 0))
+	(if (and (!gd ?vrednost 0) (!ld ?vrednost 3)) then (Ocena_ ?vrednost 1))
+	(if (and (!gd ?vrednost 2) (!ld ?vrednost 6)) then (Ocena_ ?vrednost 2))
+	(if (and (!gd ?vrednost 5) (!ld ?vrednost 8)) then (Ocena_ ?vrednost 3))
+	(if (and (!gd ?vrednost 7) (!ld ?vrednost 11)) then (Ocena_ ?vrednost 4))
+	(if (and (!gd ?vrednost 10) (!ld ?vrednost 13)) then (Ocena_ ?vrednost 5))
+	(if (and (!gd ?vrednost 12) (!ld ?vrednost 15)) then (Ocena_ ?vrednost 6))
+	
+))
+
+(defparameter *T1-FACTS* '())
+  
+(defun Izracunaj_heuristiku (stanje figura)
+  (progn (setq *T1-FACTS* (Stanje_u_cinjenice stanje figura (Pozicije_figura CRNA_FIGURA stanje) (Pozicije_figura BELA_FIGURA stanje))) 
+    (prepare-knowledge *T1-RULES* *T1-FACTS* DUBINA_TRAZENJA_MZZ)
+    (Vrednovanje_zakljucaka)
+    )
+  )
+
+(defun Stanje_u_cinjenice (stanje figura crne_pozicije bele_pozicije)
+  (let* ((izgubljene_figure (list (list 'CRNE_IZGUBLJENE (caar (last stanje)))
+                                  (list 'BELE_IZGUBLJENE (cadar (last stanje)))
+                                  )
+                            )
+         (centralnost_figura (list  (list 'CRNE_CENTRALNOST (Nadji_centralnost crne_pozicije))
+                                   (list 'BELE_CENTRALNOST (Nadji_centralnost bele_pozicije))
+                                   )
+                             )
+         (koherentnost_figura (list (list 'CRNE_KOHERENTNOST (Nadji_koherentnost crne_pozicije stanje CRNA_FIGURA))
+                                    (list 'BELE_KOHERENTNOST (Nadji_koherentnost bele_pozicije stanje BELA_FIGURA))
+                                    )
+                              ) 
+         (napadacke_figure (list (list 'CRNE_NAPADACKE (Nadji_napadacke_poteze stanje CRNA_FIGURA))
+                                 (list 'BELE_NAPADACKE (Nadji_napadacke_poteze stanje BELA_FIGURA))
+                                 )
+                           )
+         (blokirajuce_figure (list (list 'CRNE_BLOKIRANOST (Nadji_blokirajuce crne_pozicije stanje CRNA_FIGURA)) 
+                                   (list 'BELE_BLOKIRANOST (Nadji_blokirajuce bele_pozicije stanje BELA_FIGURA))
+                                   )
+                             )
+         (potencijalno_izgubljene_figure (list (list 'POTENCIJALNO_IZGUBLJENI_CRNI (Nadji_potencijalno_izgubljene crne_pozicije stanje CRNA_FIGURA))
+                                               (list 'POTENCIJALNO_IZGUBLJENI_BELI (Nadji_potencijalno_izgubljene bele_pozicije stanje BELA_FIGURA))
+                                               )
+                                         )
+         (max_igrac (list (list 'MAX_IGRAC (if (equal figura CRNA_FIGURA) 'CRNI 'BELI))))
+         )
+    (append izgubljene_figure centralnost_figura koherentnost_figura napadacke_figure blokirajuce_figure potencijalno_izgubljene_figure max_igrac '())
+    )
+  )
+
+(defun !eq (a b)
+  (equal a b)
+  )
+;
+(defun !gd (a b)
+  (> a b)
+)
+;
+(defun !ld (a b)
+  (< a b)
+)
