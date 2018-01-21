@@ -913,8 +913,19 @@
                     ((and (>= (get-number-of-elements (list i j) state) 2) (equal (get-element-of-table (list i j) state) 'o)) (number-of-possible-attacks1 state i (+ 1 j) (+ 1 number)))
                     (t(number-of-possible-attacks1 state i (+ j 1) number))))
 
+(defun number-of-possible-attacks1-x(state i j number)
+              (cond((and (= i tablesize) (> j tablesize)) number)
+                    ((> j tablesize) (number-of-possible-attacks1-x state (+ 1 i) '1 number))
+                    ((and (>= (get-number-of-elements-o (list i j) state) 2) (equal (get-element-of-table (list i j) state) 'x)) (number-of-possible-attacks1-x state i (+ 1 j) (+ 1 number)))
+                    (t(number-of-possible-attacks1-x state i (+ j 1) number))))
+
+(defun number-of-possible-attacks-x(state)
+               (number-of-possible-attacks1-x state '1 '1 '0))
+
 (defun number-of-possible-attacks(state)
   (number-of-possible-attacks1 state '1 '1 '0))
+
+
 
 (defun get-number-of-elements-for-sandwich1(state number overlap i j)
                 (cond((and (equal i tablesize) (equal j (+ tablesize 1))) (list number overlap))
@@ -949,6 +960,27 @@
                     (result (- (score successor) (score current))))
                  (cond((> result '0) (* result 20))
                        (t result))))
+
+(defun number-of-adjecent-enemy-pawns1(state i j number)
+              (cond((and (= i tablesize) (> j tablesize)) (floor number 2))
+                    ((> j tablesize) (number-of-adjecent-enemy-pawns1 state (+ 1 i) '1 number))
+                    ((and (> i 2) (<= i (- tablesize 2)) (> (get-number-of-elements (list i j) state) 0) (equal (get-element-of-table (list i j) state) 'x)) (number-of-adjecent-enemy-pawns1 state i (+ 1 j) (+ 1 number)))
+                    (t(number-of-adjecent-enemy-pawns1 state i (+ j 1) number))))
+
+
+(defun number-of-adjecent-enemy-pawns(state)
+  (number-of-adjecent-enemy-pawns1 state '1 '1 '0))
+
+
+(defun calculate-adjecent-enemy-pawns1(state number i j)
+  (cond((and (= i tablesize) (> j tablesize)) number)
+        ((> j tablesize) (calculate-adjecent-enemy-pawns1 state number (+ i 1) '1))
+        ((and (> i 2) (<= i (- tablesize 2)) (< number (+ (get-number-of-elements (list i j) state) 1)) (equal (get-element-of-table (list i j) state) 'x)) (calculate-adjecent-enemy-pawns1 state (+ (get-number-of-elements (list i j) state) 1) i (+ j 1)))
+        (t(calculate-adjecent-enemy-pawns1 state number i (+ j 1)))))
+
+
+(defun calculate-adjecent-enemy-pawns(state)
+               (calculate-adjecent-enemy-pawns1 state '0 '1 '1))
 
 ;;heuristika
 (defun heuristic(state)
