@@ -985,7 +985,7 @@
 ;;heuristika
 (defun heuristic(state)
                 (cond((kraj-igre state 'o) '1000)
-                      ((> (car (get-number-of-elements-for-sandwich state)) 1) (+ 10 (* (calculate-adjecent-friendly-pawns state) 6) (number-of-adjecent-friendly-pawns state) (calculate-score table state) (number-of-possible-attacks state) (+ (car (get-number-of-elements-for-sandwich state)) (cadr(get-number-of-elements-for-sandwich state)))))
+                      ((> (car (get-number-of-elements-for-sandwich state)) 1) (+ 10 (* (calculate-adjecent-friendly-pawns state) 5) (+ (mod (number-of-adjecent-friendly-pawns state) 5) 1) (calculate-score table state) (number-of-possible-attacks state) (+ (car (get-number-of-elements-for-sandwich state)) (cadr(get-number-of-elements-for-sandwich state)))))
                       (t(+ (* (calculate-adjecent-friendly-pawns state) 6) (number-of-adjecent-friendly-pawns state) (calculate-score table state)))))
 
 ;;ispitivanje sa hash-om
