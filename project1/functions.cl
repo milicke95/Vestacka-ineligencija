@@ -166,8 +166,12 @@
 
 
 ;;ukljanja sve figure koje su u sandwich-u
+;(defun sandwich(ta m p)
+;(stand-in-trap (sand-up (sand-down (sand-right (sand-left ta m p) m p) m p) m p) m p))
+
 (defun sandwich(ta m p)
-  (stand-in-trap (sand-up (sand-down (sand-right (sand-left ta m p) m p) m p) m p) m p))
+  (sand-up (sand-down (sand-right (sand-left ta m p) m p) m p) m p))
+
 
 (defun stand-in-trap(ta m p)
   (sint-up (sint-down (sint-right (sint-left ta m p) m p) m p) m p))
